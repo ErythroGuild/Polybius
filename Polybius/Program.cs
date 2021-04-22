@@ -17,7 +17,7 @@ namespace Polybius {
 		private const string url_search = @"https://www.wowdb.com/search?search=";
 		private const int color_embed = 0x9A61F1;
 
-		static void Main(string[] args) {
+		static void Main() {
 			const string title_ascii =
 				@"     ___      _       _     _           " + "\n" +
 				@"    / _ \___ | |_   _| |__ (_)_   _ ___ " + "\n" +
@@ -26,10 +26,10 @@ namespace Polybius {
 				@"  \/    \___/|_|\__, |_.__/|_|\__,_|___/" + "\n" +
 				@"                |___/                   " + "\n";
 			Console.WriteLine(title_ascii);
-			MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+			MainAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 
-		static async Task MainAsync(string[] args) {
+		static async Task MainAsync() {
 			Console.WriteLine("Starting up Polybius...");
 			InitBot();
 			http = new HtmlWeb();   // TODO: check timeout
