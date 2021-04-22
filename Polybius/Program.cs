@@ -36,7 +36,7 @@ namespace Polybius {
 			
 			// TODO: add undermine journal entry for items
 			// TODO: smart search - return "top" result on inexact match
-			discord.MessageCreated += async e => {
+			discord.MessageCreated += async (discord, e) => {
 				if (e.Message.Author.Username == discord.CurrentUser.Username) {
 					return;	// Never respond to self!
 				}
@@ -80,16 +80,16 @@ namespace Polybius {
 							.WithUrl(entry.URL)
 							.WithColor(new DiscordColor(color_embed))
 							.WithDescription(tooltip)
-							.WithThumbnailUrl(url_thumbnail)
+							.WithThumbnail(url_thumbnail, 80, 80)
 							.WithFooter("powered by WoWDB");
 							
-							await e.Message.RespondAsync("", false, embed);
+							await e.Message.RespondAsync(embed);
 						}
 					}
 				}
 			};
 
-			discord.Ready += async e => {
+			discord.Ready += async (discord, e) => {
 				DiscordActivity helptext =
 					new DiscordActivity(@"[[queries]]", ActivityType.Watching);
 				await discord.UpdateStatusAsync(helptext);
