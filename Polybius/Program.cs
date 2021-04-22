@@ -17,7 +17,7 @@ namespace Polybius {
 		private const string url_search = @"https://www.wowdb.com/search?search=";
 		private const int color_embed = 0x9A61F1;
 
-		static void Main(string[] args) {
+		static void Main() {
 			const string title_ascii =
 				@"     ___      _       _     _           " + "\n" +
 				@"    / _ \___ | |_   _| |__ (_)_   _ ___ " + "\n" +
@@ -26,17 +26,17 @@ namespace Polybius {
 				@"  \/    \___/|_|\__, |_.__/|_|\__,_|___/" + "\n" +
 				@"                |___/                   " + "\n";
 			Console.WriteLine(title_ascii);
-			MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+			MainAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 
-		static async Task MainAsync(string[] args) {
+		static async Task MainAsync() {
 			Console.WriteLine("Starting up Polybius...");
 			InitBot();
 			http = new HtmlWeb();   // TODO: check timeout
 			
 			// TODO: add undermine journal entry for items
 			// TODO: smart search - return "top" result on inexact match
-			discord.MessageCreated += async e => {
+			discord.MessageCreated += async (discord, e) => {
 				if (e.Message.Author.Username == discord.CurrentUser.Username) {
 					return;	// Never respond to self!
 				}
@@ -80,16 +80,16 @@ namespace Polybius {
 							.WithUrl(entry.URL)
 							.WithColor(new DiscordColor(color_embed))
 							.WithDescription(tooltip)
-							.WithThumbnailUrl(url_thumbnail)
+							.WithThumbnail(url_thumbnail, 80, 80)
 							.WithFooter("powered by WoWDB");
 							
-							await e.Message.RespondAsync("", false, embed);
+							await e.Message.RespondAsync(embed);
 						}
 					}
 				}
 			};
 
-			discord.Ready += async e => {
+			discord.Ready += async (discord, e) => {
 				DiscordActivity helptext =
 					new DiscordActivity(@"[[queries]]", ActivityType.Watching);
 				await discord.UpdateStatusAsync(helptext);
