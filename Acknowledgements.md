@@ -6,4 +6,6 @@
 
 **the <Erythro> guild and discord**
 
+**the <Hooved Angels> guild and discord**
+
 and **the DSharpPlus discord** for answering random questions
