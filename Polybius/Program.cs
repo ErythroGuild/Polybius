@@ -1,4 +1,4 @@
-﻿using DSharpPlus;		// C# Discord API
+using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -13,7 +13,7 @@ namespace Polybius {
 		private static DiscordClient discord;
 		private static HtmlWeb http;
 
-		private const string path_token = @"token.txt";
+		private const string path_token = @"config/token.txt";
 		private const string url_search = @"https://www.wowdb.com/search?search=";
 		private const int color_embed = 0x9A61F1;
 
@@ -110,8 +110,8 @@ namespace Polybius {
 			Console.WriteLine("Starting up Polybius...");
 			Console.WriteLine("Reading auth token...");
 			string bot_token = "";
-			using (StreamReader sr = File.OpenText(path_token)) {
-				bot_token = sr.ReadLine();
+			using (StreamReader token = File.OpenText(path_token)) {
+				bot_token = token.ReadLine();
 			}
 			if (bot_token != "")
 				Console.WriteLine("Auth token found.");
