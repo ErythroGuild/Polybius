@@ -1,4 +1,4 @@
-using DSharpPlus;		// C# Discord API
+﻿using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Polybius {
 	class Program {
-		private static DiscordClient discord;
+		private static DiscordClient polybius;
 		private static HtmlWeb http;
 
 		private const string path_token = @"config/token.txt";
@@ -33,9 +33,9 @@ namespace Polybius {
 			InitBot();
 			
 			// TODO: add undermine journal entry for items
-			discord.MessageCreated += async (discord, e) => {
+			polybius.MessageCreated += async (polybius, e) => {
 				// Never respond to self!
-				if (e.Message.Author == discord.CurrentUser) {
+				if (e.Message.Author == polybius.CurrentUser) {
 					return;
 				}
 
@@ -92,22 +92,23 @@ namespace Polybius {
 				}
 			};
 
-			discord.Ready += async (discord, e) => {
+			polybius.Ready += async (polybius, e) => {
 				DiscordActivity helptext =
-					new DiscordActivity(@"[[queries]]", ActivityType.Watching);
-				await discord.UpdateStatusAsync(helptext);
-				Console.WriteLine("Startup complete.");
+					new DiscordActivity("@Polybius -help", ActivityType.Watching);
+				await polybius.UpdateStatusAsync(helptext);
+				Console.WriteLine("Connected to discord servers.");
+				Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
 				Console.WriteLine("Monitoring messages...\n");
 			};
 
-			await discord.ConnectAsync();
+			await polybius.ConnectAsync();
 			await Task.Delay(-1);
 		}
 
 		// Init discord client with token from text file.
 		// This allows the token to be separated from source code.
 		static void InitBot() {
-			Console.WriteLine("Starting up Polybius...");
+			Console.WriteLine("Initializing Polybius...");
 			Console.WriteLine("Reading auth token...");
 			string bot_token = "";
 			using (StreamReader token = File.OpenText(path_token)) {
@@ -116,11 +117,12 @@ namespace Polybius {
 			if (bot_token != "")
 				Console.WriteLine("Auth token found.");
 
-			discord = new DiscordClient(new DiscordConfiguration {
+			polybius = new DiscordClient(new DiscordConfiguration {
 				Token = bot_token,
 				TokenType = TokenType.Bot
 			});
 
+			// Init HtmlAgilityPack parser.
 			http = new HtmlWeb();
 		}
 
