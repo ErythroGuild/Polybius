@@ -1,4 +1,4 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System.Collections.Generic;
@@ -81,10 +81,12 @@ namespace Polybius {
 		private const string key_ch_whitelist = "ch_whitelist";
 		private const string key_ch_blacklist = "ch_blacklist";
 
+		private string get_path_save() {
+			return path_save_base + id.ToString() + "/" + path_save_file;
+		}
+
 		public void save() {
-			string path_save =
-				path_save_base + id.ToString() + path_save_file;
-			StreamWriter file_save = new StreamWriter(path_save);
+			StreamWriter file_save = new StreamWriter(get_path_save());
 
 			// Convenience functions for writing to the file.
 			void SaveVal(string key, string val) {
