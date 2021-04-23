@@ -1,6 +1,6 @@
-﻿using DSharpPlus;       // C# Discord API
+﻿using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
-using HtmlAgilityPack;  // HTTP client + HTML parser
+using HtmlAgilityPack;	// HTTP client + HTML parser
 
 using System;
 using System.Collections.Generic;
@@ -30,20 +30,23 @@ namespace Polybius {
 		}
 
 		static async Task MainAsync() {
-			Console.WriteLine("Starting up Polybius...");
 			InitBot();
-			http = new HtmlWeb();   // TODO: check timeout
 			
 			// TODO: add undermine journal entry for items
-			// TODO: smart search - return "top" result on inexact match
 			discord.MessageCreated += async (discord, e) => {
-				if (e.Message.Author.Username == discord.CurrentUser.Username) {
-					return;	// Never respond to self!
+				// Never respond to self!
+				if (e.Message.Author == discord.CurrentUser) {
+					return;
+				}
+
+				// Rate-limit responses to other bots.
+				if (e.Message.Author.IsBot) {
+					return;	// NYI
 				}
 				
 				List<string> tokens = ExtractTokens(e.Message.Content);
 				if (tokens.Count > 0) {
-					_ = e.Message.Channel.TriggerTypingAsync();	// we don't want to await!
+					_ = e.Message.Channel.TriggerTypingAsync();
 
 					// TODO: try/catch search failures
 					foreach (string token in tokens) {
@@ -104,6 +107,7 @@ namespace Polybius {
 		// Init discord client with token from text file.
 		// This allows the token to be separated from source code.
 		static void InitBot() {
+			Console.WriteLine("Starting up Polybius...");
 			Console.WriteLine("Reading auth token...");
 			string bot_token = "";
 			using (StreamReader sr = File.OpenText(path_token)) {
@@ -116,6 +120,8 @@ namespace Polybius {
 				Token = bot_token,
 				TokenType = TokenType.Bot
 			});
+
+			http = new HtmlWeb();
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
