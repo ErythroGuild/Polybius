@@ -119,6 +119,9 @@ namespace Polybius {
 			foreach (ulong ch in ch_blacklist)
 				{ vals_blacklist.Add(ch.ToString()); }
 			SaveVals(key_ch_blacklist, vals_blacklist);
+
+			// Flush/finalize the save file.
+			file_save.Close();
 		}
 	}
 }
