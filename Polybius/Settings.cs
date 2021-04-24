@@ -1,6 +1,7 @@
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.Entities;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -123,6 +124,64 @@ namespace Polybius {
 
 			// Flush/finalize the save file.
 			file_save.Close();
+		}
+
+		public static Settings load(ulong id) {
+			Settings settings = new Settings(id);
+			StreamReader file_save =
+				new StreamReader(settings.get_path_save());
+
+			// Read in the file line-by-line.
+			while (!file_save.EndOfStream) {
+				string line = file_save.ReadLine();
+				string[] line_split = line.Split(delim_key, 2);
+				string key = line_split[0];
+				string val = line_split[1];
+
+				switch (key) {
+				case key_log_stats:
+					settings.do_log_stats = Convert.ToBoolean(val);
+					break;
+				case key_token_L:
+					settings.token_L = val;
+					break;
+				case key_token_R:
+					settings.token_R = val;
+					break;
+				case key_split:
+					settings.split = val;
+					break;
+
+				case key_ch_bot:
+					if (val == str_null)
+						{ settings.ch_bot = null; }
+					else
+						{ settings.ch_bot = Convert.ToUInt64(val); }
+					break;
+
+				case key_ch_whitelist:
+					string[] vals_whitelist =
+						val.Split(delim_entry, StringSplitOptions.RemoveEmptyEntries);
+					if (vals_whitelist[0] != "") {
+						foreach (string entry in vals_whitelist) {
+							settings.ch_whitelist.Add(Convert.ToUInt64(entry));
+						}
+					}
+					break;
+				case key_ch_blacklist:
+					string[] vals_blacklist =
+						val.Split(delim_entry, StringSplitOptions.RemoveEmptyEntries);
+					if (vals_blacklist[0] != "") {
+						foreach (string entry in vals_blacklist) {
+							settings.ch_whitelist.Add(Convert.ToUInt64(entry));
+						}
+					}
+					break;
+				}
+			}
+
+			file_save.Close();
+			return settings;
 		}
 	}
 }
