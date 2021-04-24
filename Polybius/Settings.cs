@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -63,8 +63,6 @@ namespace Polybius {
 			_ch_bot = null;
 			_ch_whitelist = new HashSet<ulong>();
 			_ch_blacklist = new HashSet<ulong>();
-
-			save();
 		}
 
 		public Regex regex_token() {

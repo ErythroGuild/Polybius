@@ -54,6 +54,7 @@ namespace Polybius {
 				await Task.Run(() => {
 					update_guild_name(e.Guild);
 					Settings settings_guild = new Settings(e.Guild.Id);
+					settings_guild.save();
 					settings.Add(e.Guild.Id, settings_guild);
 				});
 			};
