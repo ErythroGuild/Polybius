@@ -39,44 +39,45 @@ namespace Polybius {
 			init_bot();
 
 			// Connected to discord servers (but not necessarily guilds yet!).
-			polybius.Ready += async (polybius, e) => {
-				DiscordActivity helptext =
-					new DiscordActivity("@Polybius -help", ActivityType.Watching);
-				await polybius.UpdateStatusAsync(helptext);
-				Console.WriteLine("Connected to discord servers.");
-				Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
-				Console.WriteLine("Monitoring messages...\n");
-			};
+			polybius.Ready += async (polybius, e) =>
+				 await Task.Run(() => {
+					DiscordActivity helptext =
+						new DiscordActivity("@Polybius -help", ActivityType.Watching);
+					polybius.UpdateStatusAsync(helptext);
+					Console.WriteLine("Connected to discord servers.");
+					Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
+					Console.WriteLine("Monitoring messages...\n");
+				});
 
 			// Guild data has finished downloading.
-			polybius.GuildDownloadCompleted += async (polybius, e) => {
-				foreach (ulong id in e.Guilds.Keys) {
-					update_guild_name(e.Guilds[id]);
+			polybius.GuildDownloadCompleted += async (polybius, e) =>
+				await Task.Run(() => {
+					foreach (ulong id in e.Guilds.Keys) {
+						update_guild_name(e.Guilds[id]);
 
-					// load existing settings if possible; else set to default
-					Settings settings_guild;
-					if (Settings.has_save(id)) {
-						settings_guild = Settings.load(id);
-					} else {
-						settings_guild = new Settings(id);
-						settings_guild.save();
+						// load existing settings if possible; else set to default
+						Settings settings_guild;
+						if (Settings.has_save(id)) {
+							settings_guild = Settings.load(id);
+						} else {
+							settings_guild = new Settings(id);
+							settings_guild.save();
+						}
+						settings.Add(id, settings_guild);
 					}
-					settings.Add(id, settings_guild);
-				}
-			};
+				});
 
 			// Was added to a new guild.
-			polybius.GuildCreated += async (polybius, e) => {
+			polybius.GuildCreated += async (polybius, e) =>
 				await Task.Run(() => {
 					update_guild_name(e.Guild);
 					Settings settings_guild = new Settings(e.Guild.Id);
 					settings_guild.save();
 					settings.Add(e.Guild.Id, settings_guild);
 				});
-			};
 
 			// Was removed from a guild.
-			polybius.GuildDeleted += async (polybius, e) => {
+			polybius.GuildDeleted += async (polybius, e) =>
 				await Task.Run(() => {
 					// Server data: `config/guild-{guild_id}/`
 					// `_server_name.txt`
@@ -95,14 +96,12 @@ namespace Polybius {
 						Directory.Delete(path_dir);
 					}
 				});
-			};
 
 			// Any monitored guild has updated their info.
-			polybius.GuildUpdated += async (polybius, e) => {
+			polybius.GuildUpdated += async (polybius, e) =>
 				await Task.Run(() => {
 					update_guild_name(e.GuildAfter);
 				});
-			};
 
 			// Received a message from any readable channel.
 			polybius.MessageCreated += async (polybius, e) => {
