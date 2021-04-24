@@ -73,6 +73,7 @@ namespace Polybius {
 
 		private const string delim_key = ":";
 		private const string delim_entry = ",";
+		private const string str_null = "null";
 		private const string key_log_stats = "do_log_stats";
 		private const string key_token_L = "token_L";
 		private const string key_token_R = "token_R";
@@ -107,7 +108,7 @@ namespace Polybius {
 
 			// `null` is a special case that is easily disambiguated on read,
 			// since otherwise a `ulong` will only have digits after conversion.
-			string str_ch_bot = ch_bot?.ToString() ?? "null";
+			string str_ch_bot = ch_bot?.ToString() ?? str_null;
 			SaveVal(key_ch_bot, str_ch_bot);
 
 			List<string> vals_whitelist = new List<string>();
