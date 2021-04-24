@@ -1,4 +1,4 @@
-﻿using DSharpPlus;		// C# Discord API
+using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -61,13 +61,7 @@ namespace Polybius {
 
 			polybius.GuildUpdated += async (polybius, e) => {
 				await Task.Run(() => {
-					// Update `config/guild-{guild_id}/_server_name.txt`.
-					string file_path =
-						Settings.path_save_base + e.GuildAfter.Id.ToString() + "/" +
-						Settings.path_name_file;
-					StreamWriter file = new StreamWriter(file_path);
-					file.WriteLine(e.GuildAfter.Name);
-					file.Close();
+					update_guild_name(e.GuildAfter);
 				});
 			};
 
@@ -153,6 +147,17 @@ namespace Polybius {
 
 			// Init HtmlAgilityPack parser.
 			http = new HtmlWeb();
+		}
+
+		// Updates the guild name of a specific guild.
+		static void update_guild_name(DiscordGuild guild) {
+			// Update `config/guild-{guild_id}/_server_name.txt`.
+			string file_path =
+				Settings.path_save_base + guild.Id.ToString() + "/" +
+				Settings.path_name_file;
+			StreamWriter file = new StreamWriter(file_path);
+			file.WriteLine(guild.Name);
+			file.Close();
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
