@@ -60,7 +60,15 @@ namespace Polybius {
 			};
 
 			polybius.GuildUpdated += async (polybius, e) => {
-				// Update `config/_server_name.txt`.
+				await Task.Run(() => {
+					// Update `config/guild-{guild_id}/_server_name.txt`.
+					string file_path =
+						Settings.path_save_base + e.GuildAfter.Id.ToString() + "/" +
+						Settings.path_name_file;
+					StreamWriter file = new StreamWriter(file_path);
+					file.WriteLine(e.GuildAfter.Name);
+					file.Close();
+				});
 			};
 
 			polybius.MessageCreated += async (polybius, e) => {

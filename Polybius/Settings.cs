@@ -10,8 +10,9 @@ namespace Polybius {
 		public const string group_meta = "meta";
 
 		// `config/guild-{guild_id}/settings.txt`
-		private const string path_save_base = "config/guild-";
-		private const string path_save_file = "settings.txt";
+		public const string path_save_base = "config/guild-";
+		public const string path_save_file = "settings.txt";
+		public const string path_name_file = "_server_name.txt";
 
 		// Private backing fields for all settings.
 		private bool _do_log_stats;
