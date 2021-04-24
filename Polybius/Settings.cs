@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -106,7 +106,7 @@ namespace Polybius {
 		}
 
 		// These variables are only used to save/load settings.
-		private const string delim_key = ":";
+		private const string delim_key = "=";
 		private const string delim_entry = ",";
 		private const string str_null = "null";
 		private const string key_log_stats = "do_log_stats";
