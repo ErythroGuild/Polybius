@@ -73,15 +73,34 @@ namespace Polybius {
 
 			// Was removed from a guild.
 			polybius.GuildDeleted += async (polybius, e) => {
-				// NYI
+				await Task.Run(() => {
+					// Server data: `config/guild-{guild_id}/`
+					// `_server_name.txt`
+					// `settings.txt`
+					string path_dir = Settings.path_save_base +
+						e.Guild.Id.ToString();
+					string path_name = path_dir + "/" + Settings.path_name_file;
+					string path_save = path_dir + "/" + Settings.path_save_file;
+					if (File.Exists(path_name)) {
+						File.Delete(path_name);
+					}
+					if (File.Exists(path_save)) {
+						File.Delete(path_save);
+					}
+					if (Directory.Exists(path_dir)) {
+						Directory.Delete(path_dir);
+					}
+				});
 			};
 
+			// Any monitored guild has updated their info.
 			polybius.GuildUpdated += async (polybius, e) => {
 				await Task.Run(() => {
 					update_guild_name(e.GuildAfter);
 				});
 			};
 
+			// Received a message from any readable channel.
 			polybius.MessageCreated += async (polybius, e) => {
 				// Never respond to self!
 				if (e.Message.Author == polybius.CurrentUser) {
