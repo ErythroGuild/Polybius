@@ -73,7 +73,7 @@
        y="0" />
     <g
        id="initial"
-       transform="matrix(0.84696974,0,0,0.84696974,4.2235236,1.3990816)"
+       transform="matrix(0.84696974,0,0,0.84696974,4.2512002,2.0410664)"
        style="stroke:#ffcec9;stroke-opacity:1">
       <path
          sodipodi:nodetypes="cc"
@@ -128,20 +128,13 @@
     </g>
     <g
        id="search"
-       transform="matrix(0.66532429,-0.52411958,0.52411958,0.66532429,-5.8574923,13.094327)">
-      <circle
-         style="color:#000000;overflow:visible;fill:#3e0600;fill-opacity:1;stroke-width:1.05833;stroke-miterlimit:4;stroke-dasharray:none"
-         id="lens"
-         cx="26.35396"
-         cy="3.6406553"
-         r="3.3742776"
-         transform="rotate(38.229823)" />
+       transform="matrix(0.66532429,-0.52411958,0.52411958,0.66532429,-5.9243097,13.628863)">
       <circle
          r="3.8903365"
          cy="19.16815"
          cx="18.449055"
-         id="rim"
-         style="color:#000000;overflow:visible;fill:none;stroke:#da4331;stroke-width:1.32292;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+         id="lens"
+         style="color:#000000;overflow:visible;fill:#3e0600;stroke:#da4331;stroke-width:1.32296391;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1;paint-order:normal" />
       <path
          id="neck"
          d="M 18.449055,23.657996 V 24.665515"
