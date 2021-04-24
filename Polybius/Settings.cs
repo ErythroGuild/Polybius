@@ -10,8 +10,9 @@ namespace Polybius {
 		public const string group_meta = "meta";
 
 		// `config/guild-{guild_id}/settings.txt`
-		private const string path_save_base = "config/guild-";
-		private const string path_save_file = "settings.txt";
+		public const string path_save_base = "config/guild-";
+		public const string path_save_file = "settings.txt";
+		public const string path_name_file = "_server_name.txt";
 
 		// Private backing fields for all settings.
 		private bool _do_log_stats;
@@ -62,8 +63,6 @@ namespace Polybius {
 			_ch_bot = null;
 			_ch_whitelist = new HashSet<ulong>();
 			_ch_blacklist = new HashSet<ulong>();
-
-			save();
 		}
 
 		public Regex regex_token() {
@@ -118,8 +117,16 @@ namespace Polybius {
 		private const string key_ch_whitelist = "ch_whitelist";
 		private const string key_ch_blacklist = "ch_blacklist";
 
-		private string get_path_save() {
+		private static string get_path_save(ulong id) {
 			return path_save_base + id.ToString() + "/" + path_save_file;
+		}
+
+		private string get_path_save() {
+			return get_path_save(id);
+		}
+
+		public static bool has_save(ulong id) {
+			return File.Exists(get_path_save(id));
 		}
 
 		public void save() {

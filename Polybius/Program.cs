@@ -32,9 +32,75 @@ namespace Polybius {
 		}
 
 		static async Task MainAsync() {
-			InitBot();
-			
-			// TODO: add undermine journal entry for items
+			init_bot();
+
+			// Connected to discord servers (but not necessarily guilds yet!).
+			polybius.Ready += async (polybius, e) => {
+				DiscordActivity helptext =
+					new DiscordActivity("@Polybius -help", ActivityType.Watching);
+				await polybius.UpdateStatusAsync(helptext);
+				Console.WriteLine("Connected to discord servers.");
+				Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
+				Console.WriteLine("Monitoring messages...\n");
+			};
+
+			// Guild data has finished downloading.
+			polybius.GuildDownloadCompleted += async (polybius, e) => {
+				foreach (ulong id in e.Guilds.Keys) {
+					update_guild_name(e.Guilds[id]);
+
+					// load existing settings if possible; else set to default
+					Settings settings_guild;
+					if (Settings.has_save(id)) {
+						settings_guild = Settings.load(id);
+					} else {
+						settings_guild = new Settings(id);
+						settings_guild.save();
+					}
+					settings.Add(id, settings_guild);
+				}
+			};
+
+			// Was added to a new guild.
+			polybius.GuildCreated += async (polybius, e) => {
+				await Task.Run(() => {
+					update_guild_name(e.Guild);
+					Settings settings_guild = new Settings(e.Guild.Id);
+					settings_guild.save();
+					settings.Add(e.Guild.Id, settings_guild);
+				});
+			};
+
+			// Was removed from a guild.
+			polybius.GuildDeleted += async (polybius, e) => {
+				await Task.Run(() => {
+					// Server data: `config/guild-{guild_id}/`
+					// `_server_name.txt`
+					// `settings.txt`
+					string path_dir = Settings.path_save_base +
+						e.Guild.Id.ToString();
+					string path_name = path_dir + "/" + Settings.path_name_file;
+					string path_save = path_dir + "/" + Settings.path_save_file;
+					if (File.Exists(path_name)) {
+						File.Delete(path_name);
+					}
+					if (File.Exists(path_save)) {
+						File.Delete(path_save);
+					}
+					if (Directory.Exists(path_dir)) {
+						Directory.Delete(path_dir);
+					}
+				});
+			};
+
+			// Any monitored guild has updated their info.
+			polybius.GuildUpdated += async (polybius, e) => {
+				await Task.Run(() => {
+					update_guild_name(e.GuildAfter);
+				});
+			};
+
+			// Received a message from any readable channel.
 			polybius.MessageCreated += async (polybius, e) => {
 				// Never respond to self!
 				if (e.Message.Author == polybius.CurrentUser) {
@@ -94,22 +160,13 @@ namespace Polybius {
 				}
 			};
 
-			polybius.Ready += async (polybius, e) => {
-				DiscordActivity helptext =
-					new DiscordActivity("@Polybius -help", ActivityType.Watching);
-				await polybius.UpdateStatusAsync(helptext);
-				Console.WriteLine("Connected to discord servers.");
-				Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
-				Console.WriteLine("Monitoring messages...\n");
-			};
-
 			await polybius.ConnectAsync();
 			await Task.Delay(-1);
 		}
 
 		// Init discord client with token from text file.
 		// This allows the token to be separated from source code.
-		static void InitBot() {
+		static void init_bot() {
 			Console.WriteLine("Initializing Polybius...");
 			Console.WriteLine("Reading auth token...");
 			string bot_token = "";
@@ -126,6 +183,17 @@ namespace Polybius {
 
 			// Init HtmlAgilityPack parser.
 			http = new HtmlWeb();
+		}
+
+		// Updates the guild name of a specific guild.
+		static void update_guild_name(DiscordGuild guild) {
+			// Update `config/guild-{guild_id}/_server_name.txt`.
+			string file_path =
+				Settings.path_save_base + guild.Id.ToString() + "/" +
+				Settings.path_name_file;
+			StreamWriter file = new StreamWriter(file_path);
+			file.WriteLine(guild.Name);
+			file.Close();
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
