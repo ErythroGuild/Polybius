@@ -1,7 +1,4 @@
-﻿using DSharpPlus;
-using DSharpPlus.Entities;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -14,24 +11,54 @@ namespace Polybius {
 		private const string path_save_base = "config/guild-";
 		private const string path_save_file = "settings.txt";
 
-		public ulong id;
-		public bool do_log_stats;
-		public string token_L;
-		public string token_R;
-		public string split;
-		public ulong? ch_bot;
-		public HashSet<ulong> ch_whitelist;
-		public HashSet<ulong> ch_blacklist;
+		private bool _do_log_stats;
+		private string _token_L, _token_R, _split;
+		private ulong? _ch_bot;
+		private HashSet<ulong> _ch_whitelist, _ch_blacklist;
+
+		// Hiding setter since guild_id should be immutable;
+		// all other property setters also save the entire object.
+		public ulong id { get; private set; }
+		public bool do_log_stats {
+			get => _do_log_stats;
+			set { _do_log_stats = value; save(); }
+		}
+		public string token_L {
+			get => _token_L;
+			set { _token_L = value; save(); }
+		}
+		public string token_R {
+			get => _token_R;
+			set { _token_R = value; save(); }
+		}
+		public string split {
+			get => _split;
+			set { _split = value; save(); }
+		}
+		public ulong? ch_bot {
+			get => _ch_bot;
+			set { _ch_bot = value; save(); }
+		}
+		public HashSet<ulong> ch_whitelist {
+			get => _ch_whitelist;
+			set { _ch_whitelist = value; save(); }
+		}
+		public HashSet<ulong> ch_blacklist {
+			get => _ch_blacklist;
+			set { _ch_blacklist = value; save(); }
+		}
 
 		// Default constructor:
 		// stat logging, [[query|meta]] tokens, no bot channel
 		public Settings(ulong id) {
 			this.id = id;
-			do_log_stats = true;
-			token_L = "[["; split = "|"; token_R = "]]";
-			ch_bot = null;
-			ch_whitelist = new HashSet<ulong>();
-			ch_blacklist = new HashSet<ulong>();
+			_do_log_stats = true;
+			_token_L = "[["; _split = "|"; _token_R = "]]";
+			_ch_bot = null;
+			_ch_whitelist = new HashSet<ulong>();
+			_ch_blacklist = new HashSet<ulong>();
+
+			save();
 		}
 
 		public Regex regex_token() {
