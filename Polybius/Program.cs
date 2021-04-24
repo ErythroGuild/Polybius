@@ -1,4 +1,4 @@
-﻿using DSharpPlus;		// C# Discord API
+using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -191,6 +191,8 @@ namespace Polybius {
 			string file_path =
 				Settings.path_save_base + guild.Id.ToString() + "/" +
 				Settings.path_name_file;
+			// directory must exist before creating a file there.
+			Directory.CreateDirectory(Settings.path_save_base + guild.Id.ToString());
 			StreamWriter file = new StreamWriter(file_path);
 			file.WriteLine(guild.Name);
 			file.Close();

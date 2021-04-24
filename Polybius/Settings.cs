@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -130,6 +130,8 @@ namespace Polybius {
 		}
 
 		public void save() {
+			// Directory must exist before attempting to create a file there.
+			Directory.CreateDirectory(path_save_base + id.ToString());
 			StreamWriter file_save = new StreamWriter(get_path_save());
 
 			// Convenience functions for writing to the file.
@@ -141,7 +143,8 @@ namespace Polybius {
 				foreach (string entry in vals)
 					{ val += entry + delim_entry; }
 				// trim the trailing delimiter
-				val = val.Remove(val.LastIndexOf(delim_entry));
+				if (val.EndsWith(delim_entry))
+					{ val = val.Remove(val.LastIndexOf(delim_entry)); }
 				SaveVal(key, val);
 			}
 
