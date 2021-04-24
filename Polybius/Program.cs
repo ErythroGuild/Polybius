@@ -51,7 +51,11 @@ namespace Polybius {
 
 			// Was added to a new guild.
 			polybius.GuildCreated += async (polybius, e) => {
-				// NYI
+				await Task.Run(() => {
+					update_guild_name(e.Guild);
+					Settings settings_guild = new Settings(e.Guild.Id);
+					settings.Add(e.Guild.Id, settings_guild);
+				});
 			};
 
 			// Was removed from a guild.
