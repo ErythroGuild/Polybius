@@ -34,6 +34,7 @@ namespace Polybius {
 		static async Task MainAsync() {
 			InitBot();
 
+			// Connected to discord servers (but not necessarily guilds yet!).
 			polybius.Ready += async (polybius, e) => {
 				DiscordActivity helptext =
 					new DiscordActivity("@Polybius -help", ActivityType.Watching);
@@ -43,7 +44,25 @@ namespace Polybius {
 				Console.WriteLine("Monitoring messages...\n");
 			};
 
-			// TODO: add undermine journal entry for items
+			// Guild data has finished downloading.
+			polybius.GuildDownloadCompleted += async (polybius, e) => {
+				// NYI
+			};
+
+			// Was added to a new guild.
+			polybius.GuildCreated += async (polybius, e) => {
+				// NYI
+			};
+
+			// Was removed from a guild.
+			polybius.GuildDeleted += async (polybius, e) => {
+				// NYI
+			};
+
+			polybius.GuildUpdated += async (polybius, e) => {
+				// Update `config/_server_name.txt`.
+			};
+
 			polybius.MessageCreated += async (polybius, e) => {
 				// Never respond to self!
 				if (e.Message.Author == polybius.CurrentUser) {
