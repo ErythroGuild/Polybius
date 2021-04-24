@@ -1,4 +1,4 @@
-using DSharpPlus;		// C# Discord API
+﻿using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -32,7 +32,7 @@ namespace Polybius {
 		}
 
 		static async Task MainAsync() {
-			InitBot();
+			init_bot();
 
 			// Connected to discord servers (but not necessarily guilds yet!).
 			polybius.Ready += async (polybius, e) => {
@@ -46,7 +46,19 @@ namespace Polybius {
 
 			// Guild data has finished downloading.
 			polybius.GuildDownloadCompleted += async (polybius, e) => {
-				// NYI
+				foreach (ulong id in e.Guilds.Keys) {
+					update_guild_name(e.Guilds[id]);
+
+					// load existing settings if possible; else set to default
+					Settings settings_guild;
+					if (Settings.has_save(id)) {
+						settings_guild = Settings.load(id);
+					} else {
+						settings_guild = new Settings(id);
+						settings_guild.save();
+					}
+					settings.Add(id, settings_guild);
+				}
 			};
 
 			// Was added to a new guild.
@@ -135,7 +147,7 @@ namespace Polybius {
 
 		// Init discord client with token from text file.
 		// This allows the token to be separated from source code.
-		static void InitBot() {
+		static void init_bot() {
 			Console.WriteLine("Initializing Polybius...");
 			Console.WriteLine("Reading auth token...");
 			string bot_token = "";
