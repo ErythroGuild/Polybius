@@ -98,7 +98,8 @@ namespace Polybius {
 				string val = "";
 				foreach (string entry in vals)
 					{ val += entry + delim_entry; }
-				// Note: this leaves a trailing delimiter!
+				// trim the trailing delimiter
+				val = val.Remove(val.LastIndexOf(delim_entry));
 				SaveVal(key, val);
 			}
 
@@ -160,8 +161,7 @@ namespace Polybius {
 					break;
 
 				case key_ch_whitelist:
-					string[] vals_whitelist =
-						val.Split(delim_entry, StringSplitOptions.RemoveEmptyEntries);
+					string[] vals_whitelist = val.Split(delim_entry);
 					if (vals_whitelist[0] != "") {
 						foreach (string entry in vals_whitelist) {
 							settings.ch_whitelist.Add(Convert.ToUInt64(entry));
@@ -169,8 +169,7 @@ namespace Polybius {
 					}
 					break;
 				case key_ch_blacklist:
-					string[] vals_blacklist =
-						val.Split(delim_entry, StringSplitOptions.RemoveEmptyEntries);
+					string[] vals_blacklist = val.Split(delim_entry);
 					if (vals_blacklist[0] != "") {
 						foreach (string entry in vals_blacklist) {
 							settings.ch_whitelist.Add(Convert.ToUInt64(entry));
