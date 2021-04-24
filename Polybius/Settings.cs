@@ -5,12 +5,15 @@ using System.Text.RegularExpressions;
 
 namespace Polybius {
 	class Settings {
+		// Regex group names.
 		public const string group_query = "query";
 		public const string group_meta = "meta";
 
+		// `config/guild-{guild_id}/settings.txt`
 		private const string path_save_base = "config/guild-";
 		private const string path_save_file = "settings.txt";
 
+		// Private backing fields for all settings.
 		private bool _do_log_stats;
 		private string _token_L, _token_R, _split;
 		private ulong? _ch_bot;
@@ -50,6 +53,8 @@ namespace Polybius {
 
 		// Default constructor:
 		// stat logging, [[query|meta]] tokens, no bot channel
+		// Directly accesses the private backing fields to avoid saving
+		// the entire file on every access.
 		public Settings(ulong id) {
 			this.id = id;
 			_do_log_stats = true;
@@ -74,6 +79,8 @@ namespace Polybius {
 				RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		}
 
+		// Returns whether or not the bot is allowed to post in a channel,
+		// but does not take into account the bot channel (`ch_bot`).
 		public bool is_ch_safe(ulong id) {
 			if (ch_whitelist.Count > 0) {
 				if (!ch_whitelist.Contains(id)) {
@@ -99,6 +106,7 @@ namespace Polybius {
 			}
 		}
 
+		// These variables are only used to save/load settings.
 		private const string delim_key = ":";
 		private const string delim_entry = ",";
 		private const string str_null = "null";
