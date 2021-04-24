@@ -1,4 +1,4 @@
-using DSharpPlus;		// C# Discord API
+﻿using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -18,6 +18,10 @@ namespace Polybius {
 		private const string path_token = @"config/token.txt";
 		private const string url_search = @"https://www.wowdb.com/search?search=";
 		private const int color_embed = 0x9A61F1;
+
+		static Program() {
+			settings = new Dictionary<ulong, Settings>();
+		}
 
 		static void Main() {
 			const string title_ascii =
