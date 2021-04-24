@@ -19,6 +19,10 @@ namespace Polybius {
 		private const string url_search = @"https://www.wowdb.com/search?search=";
 		private const int color_embed = 0x9A61F1;
 
+		static Program() {
+			settings = new Dictionary<ulong, Settings>();
+		}
+
 		static void Main() {
 			const string title_ascii =
 				@"     ___      _       _     _           " + "\n" +
@@ -191,6 +195,8 @@ namespace Polybius {
 			string file_path =
 				Settings.path_save_base + guild.Id.ToString() + "/" +
 				Settings.path_name_file;
+			// directory must exist before creating a file there.
+			Directory.CreateDirectory(Settings.path_save_base + guild.Id.ToString());
 			StreamWriter file = new StreamWriter(file_path);
 			file.WriteLine(guild.Name);
 			file.Close();
