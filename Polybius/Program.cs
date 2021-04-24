@@ -33,7 +33,16 @@ namespace Polybius {
 
 		static async Task MainAsync() {
 			InitBot();
-			
+
+			polybius.Ready += async (polybius, e) => {
+				DiscordActivity helptext =
+					new DiscordActivity("@Polybius -help", ActivityType.Watching);
+				await polybius.UpdateStatusAsync(helptext);
+				Console.WriteLine("Connected to discord servers.");
+				Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
+				Console.WriteLine("Monitoring messages...\n");
+			};
+
 			// TODO: add undermine journal entry for items
 			polybius.MessageCreated += async (polybius, e) => {
 				// Never respond to self!
@@ -92,15 +101,6 @@ namespace Polybius {
 						}
 					}
 				}
-			};
-
-			polybius.Ready += async (polybius, e) => {
-				DiscordActivity helptext =
-					new DiscordActivity("@Polybius -help", ActivityType.Watching);
-				await polybius.UpdateStatusAsync(helptext);
-				Console.WriteLine("Connected to discord servers.");
-				Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
-				Console.WriteLine("Monitoring messages...\n");
 			};
 
 			await polybius.ConnectAsync();
