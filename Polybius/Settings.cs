@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -117,8 +117,16 @@ namespace Polybius {
 		private const string key_ch_whitelist = "ch_whitelist";
 		private const string key_ch_blacklist = "ch_blacklist";
 
-		private string get_path_save() {
+		private static string get_path_save(ulong id) {
 			return path_save_base + id.ToString() + "/" + path_save_file;
+		}
+
+		private string get_path_save() {
+			return get_path_save(id);
+		}
+
+		public static bool has_save(ulong id) {
+			return File.Exists(get_path_save(id));
 		}
 
 		public void save() {
