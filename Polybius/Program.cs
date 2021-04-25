@@ -1,4 +1,4 @@
-using DSharpPlus;		// C# Discord API
+﻿using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -15,24 +15,19 @@ namespace Polybius {
 		private static DiscordClient polybius;
 		private static HtmlWeb http;
 
-		private static Dictionary<ulong, Settings> settings;
-		private static Dictionary<ChannelBotPair, Queue<DateTime>> bot_queues_short;
-		private static Dictionary<ChannelBotPair, Queue<DateTime>> bot_queues_long;
+		private static Dictionary<ulong, Settings> settings = new ();
+		private static Dictionary<ChannelBotPair, Queue<DateTime>>
+			bot_queues_short = new (),
+			bot_queues_long = new ();
 
-		private static readonly TimeSpan ratelimit_short = TimeSpan.FromSeconds(10);
-		private static readonly TimeSpan ratelimit_long = TimeSpan.FromMinutes(1);
-		private const int rate_short = 5;
-		private const int rate_long = 8;
+		private static readonly TimeSpan
+			ratelimit_short = TimeSpan.FromSeconds(10),
+			ratelimit_long = TimeSpan.FromMinutes(1);
+		private const int rate_short = 5, rate_long = 8;
 
 		private const string path_token = @"config/token.txt";
 		private const string url_search = @"https://www.wowdb.com/search?search=";
 		private const int color_embed = 0x9A61F1;
-
-		static Program() {
-			settings = new Dictionary<ulong, Settings>();
-			bot_queues_short = new();
-			bot_queues_long = new();
-		}
 
 		static void Main() {
 			const string title_ascii =
@@ -53,8 +48,9 @@ namespace Polybius {
 			polybius.Ready += async (polybius, e) =>
 				 await Task.Run(() => {
 					DiscordActivity helptext =
-						new DiscordActivity("@Polybius -help", ActivityType.Watching);
+						new ("@Polybius -help", ActivityType.Watching);
 					polybius.UpdateStatusAsync(helptext);
+
 					Console.WriteLine("Connected to discord servers.");
 					Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
 					Console.WriteLine("Monitoring messages...\n");
@@ -71,7 +67,7 @@ namespace Polybius {
 						if (Settings.has_save(id)) {
 							settings_guild = Settings.load(id);
 						} else {
-							settings_guild = new Settings(id);
+							settings_guild = new (id);
 							settings_guild.save();
 						}
 						settings.Add(id, settings_guild);
@@ -82,7 +78,7 @@ namespace Polybius {
 			polybius.GuildCreated += async (polybius, e) =>
 				await Task.Run(() => {
 					update_guild_name(e.Guild);
-					Settings settings_guild = new Settings(e.Guild.Id);
+					Settings settings_guild = new (e.Guild.Id);
 					settings_guild.save();
 					settings.Add(e.Guild.Id, settings_guild);
 				});
@@ -125,13 +121,13 @@ namespace Polybius {
 
 				// Rate-limit responses to other bots.
 				if (msg.Author.IsBot) {
-					ChannelBotPair ch_bot_id = new(msg.ChannelId, msg.Author.Id);
+					ChannelBotPair ch_bot_id = new (msg.ChannelId, msg.Author.Id);
 
 					if (!bot_queues_short.ContainsKey(ch_bot_id)) {
-						bot_queues_short.Add(ch_bot_id, new Queue<DateTime>());
+						bot_queues_short.Add(ch_bot_id, new ());
 					}
 					if (!bot_queues_long.ContainsKey(ch_bot_id)) {
-						bot_queues_long.Add(ch_bot_id, new Queue<DateTime>());
+						bot_queues_long.Add(ch_bot_id, new ());
 					}
 
 					DateTime now = DateTime.Now;

@@ -6,13 +6,14 @@ using System.Text.RegularExpressions;
 namespace Polybius {
 	class Settings {
 		// Regex group names.
-		public const string group_query = "query";
-		public const string group_meta = "meta";
+		public const string
+			group_query = "query", group_meta = "meta";
 
 		// `config/guild-{guild_id}/settings.txt`
-		public const string path_save_base = "config/guild-";
-		public const string path_save_file = "settings.txt";
-		public const string path_name_file = "_server_name.txt";
+		public const string
+			path_save_base = "config/guild-",
+			path_save_file = "settings.txt",
+			path_name_file = "_server_name.txt";
 
 		// Private backing fields for all settings.
 		private bool _do_log_stats;
@@ -61,8 +62,8 @@ namespace Polybius {
 			_do_log_stats = true;
 			_token_L = "[["; _split = "|"; _token_R = "]]";
 			_ch_bot = null;
-			_ch_whitelist = new HashSet<ulong>();
-			_ch_blacklist = new HashSet<ulong>();
+			_ch_whitelist = new ();
+			_ch_blacklist = new ();
 		}
 
 		public Regex regex_token() {
@@ -106,16 +107,16 @@ namespace Polybius {
 		}
 
 		// These variables are only used to save/load settings.
-		private const string delim_key = "=";
-		private const string delim_entry = ",";
+		private const string delim_key = "=", delim_entry = ",";
 		private const string str_null = "null";
-		private const string key_log_stats = "do_log_stats";
-		private const string key_token_L = "token_L";
-		private const string key_token_R = "token_R";
-		private const string key_split = "split";
-		private const string key_ch_bot = "ch_bot";
-		private const string key_ch_whitelist = "ch_whitelist";
-		private const string key_ch_blacklist = "ch_blacklist";
+		private const string
+			key_log_stats	= "do_log_stats",
+			key_token_L		= "token_L",
+			key_token_R		= "token_R",
+			key_split		= "split",
+			key_ch_bot		= "ch_bot",
+			key_ch_whitelist = "ch_whitelist",
+			key_ch_blacklist = "ch_blacklist";
 
 		private static string get_path_save(ulong id) {
 			return path_save_base + id.ToString() + "/" + path_save_file;
@@ -132,7 +133,7 @@ namespace Polybius {
 		public void save() {
 			// Directory must exist before attempting to create a file there.
 			Directory.CreateDirectory(path_save_base + id.ToString());
-			StreamWriter file_save = new StreamWriter(get_path_save());
+			StreamWriter file_save = new (get_path_save());
 
 			// Convenience functions for writing to the file.
 			void SaveVal(string key, string val) {
@@ -158,12 +159,12 @@ namespace Polybius {
 			string str_ch_bot = ch_bot?.ToString() ?? str_null;
 			SaveVal(key_ch_bot, str_ch_bot);
 
-			List<string> vals_whitelist = new List<string>();
+			List<string> vals_whitelist = new ();
 			foreach (ulong ch in ch_whitelist)
 				{ vals_whitelist.Add(ch.ToString()); }
 			SaveVals(key_ch_whitelist, vals_whitelist);
 
-			List<string> vals_blacklist = new List<string>();
+			List<string> vals_blacklist = new ();
 			foreach (ulong ch in ch_blacklist)
 				{ vals_blacklist.Add(ch.ToString()); }
 			SaveVals(key_ch_blacklist, vals_blacklist);
@@ -173,9 +174,8 @@ namespace Polybius {
 		}
 
 		public static Settings load(ulong id) {
-			Settings settings = new Settings(id);
-			StreamReader file_save =
-				new StreamReader(settings.get_path_save());
+			Settings settings = new (id);
+			StreamReader file_save = new (settings.get_path_save());
 
 			// Read in the file line-by-line.
 			while (!file_save.EndOfStream) {
