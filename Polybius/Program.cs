@@ -52,7 +52,7 @@ namespace Polybius {
 					polybius.UpdateStatusAsync(helptext);
 
 					Console.WriteLine("Connected to discord servers.");
-					Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
+					Console.WriteLine($"Connected to {polybius.Guilds.Count} server(s).");
 					Console.WriteLine("Monitoring messages...\n");
 				});
 
@@ -91,8 +91,8 @@ namespace Polybius {
 					// `settings.txt`
 					string path_dir = Settings.path_save_base +
 						e.Guild.Id.ToString();
-					string path_name = path_dir + "/" + Settings.path_name_file;
-					string path_save = path_dir + "/" + Settings.path_save_file;
+					string path_name = $"{path_dir}/{Settings.path_name_file}";
+					string path_save = $"{path_dir}/{Settings.path_save_file}";
 					if (File.Exists(path_name)) {
 						File.Delete(path_name);
 					}

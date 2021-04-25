@@ -70,11 +70,9 @@ namespace Polybius {
 			// e.g.:
 			// \Q[[\E(?<query>.+?)(?:\Q|\E(?<meta>.+?))?\Q]]\E
 			string regex_str =
-				@"\Q" + token_L + @"\E" +
-				@"(?<"+ group_query + @">.+?)" +
-				@"(?:\Q" + split + @"\E" +
-				@"(?<" + group_meta + @">.+?))?" +
-				@"\Q" + token_R + @"\E";
+				$@"\Q{token_L}\E(?<{group_query}>.+?)" +
+				$@"(?:\Q{split}\E(?<{group_meta}>.+?))?" +
+				$@"\Q{token_R}\E";
 			return new Regex(regex_str,
 				RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		}
@@ -119,7 +117,7 @@ namespace Polybius {
 			key_ch_blacklist = "ch_blacklist";
 
 		private static string get_path_save(ulong id) {
-			return path_save_base + id.ToString() + "/" + path_save_file;
+			return $"{path_save_base}{id}/{path_save_file}";
 		}
 
 		private string get_path_save() {
