@@ -1,4 +1,4 @@
-﻿using DSharpPlus;		// C# Discord API
+using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -105,13 +105,15 @@ namespace Polybius {
 
 			// Received a message from any readable channel.
 			polybius.MessageCreated += async (polybius, e) => {
+				DiscordMessage msg = e.Message;
+
 				// Never respond to self!
-				if (e.Message.Author == polybius.CurrentUser) {
+				if (msg.Author == polybius.CurrentUser) {
 					return;
 				}
 
 				// Rate-limit responses to other bots.
-				if (e.Message.Author.IsBot) {
+				if (msg.Author.IsBot) {
 					return;	// NYI
 				}
 				
