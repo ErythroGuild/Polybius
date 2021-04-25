@@ -9,11 +9,20 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Polybius {
+	using ChannelBotPair = Tuple<ulong, ulong>;
+
 	class Program {
 		private static DiscordClient polybius;
 		private static HtmlWeb http;
 
 		private static Dictionary<ulong, Settings> settings;
+		private static Dictionary<ChannelBotPair, Queue<DateTime>> bot_queues_short;
+		private static Dictionary<ChannelBotPair, Queue<DateTime>> bot_queues_long;
+
+		private static readonly TimeSpan ratelimit_short = TimeSpan.FromSeconds(10);
+		private static readonly TimeSpan ratelimit_long = TimeSpan.FromMinutes(1);
+		private const int rate_short = 5;
+		private const int rate_long = 8;
 
 		private const string path_token = @"config/token.txt";
 		private const string url_search = @"https://www.wowdb.com/search?search=";
@@ -21,6 +30,8 @@ namespace Polybius {
 
 		static Program() {
 			settings = new Dictionary<ulong, Settings>();
+			bot_queues_short = new();
+			bot_queues_long = new();
 		}
 
 		static void Main() {
@@ -114,7 +125,32 @@ namespace Polybius {
 
 				// Rate-limit responses to other bots.
 				if (msg.Author.IsBot) {
-					return;	// NYI
+					ChannelBotPair ch_bot_id = new(msg.ChannelId, msg.Author.Id);
+
+					if (!bot_queues_short.ContainsKey(ch_bot_id)) {
+						bot_queues_short.Add(ch_bot_id, new Queue<DateTime>());
+					}
+					if (!bot_queues_long.ContainsKey(ch_bot_id)) {
+						bot_queues_long.Add(ch_bot_id, new Queue<DateTime>());
+					}
+
+					DateTime now = DateTime.Now;
+					if (bot_queues_short[ch_bot_id].Count >= rate_short) {
+						if (now - bot_queues_short[ch_bot_id].Peek() < ratelimit_short)
+							{ return; }
+						else
+							{ bot_queues_short[ch_bot_id].Dequeue(); }
+					}
+					if (bot_queues_long[ch_bot_id].Count >= rate_long) {
+						if (now - bot_queues_long[ch_bot_id].Peek() < ratelimit_long)
+							{ return; }
+						else
+							{ bot_queues_long[ch_bot_id].Dequeue(); }
+					}
+
+					bot_queues_short[ch_bot_id].Enqueue(now);
+					bot_queues_long[ch_bot_id].Enqueue(now);
+					return;
 				}
 				
 				List<string> tokens = ExtractTokens(e.Message.Content);
