@@ -1,4 +1,4 @@
-﻿using DSharpPlus;		// C# Discord API
+using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -146,7 +146,6 @@ namespace Polybius {
 
 					bot_queues_short[ch_bot_id].Enqueue(now);
 					bot_queues_long[ch_bot_id].Enqueue(now);
-					return;
 				}
 				
 				List<string> tokens = ExtractTokens(e.Message.Content);
