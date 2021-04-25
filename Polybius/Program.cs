@@ -124,7 +124,7 @@ namespace Polybius {
 					ChannelBotPair ch_bot_id = new (msg.ChannelId, msg.Author.Id);
 
 					try_init_ratelimit(ch_bot_id);
-					bool is_limited = try_process_ratelimit(ch_bot_id);
+					bool is_limited = !try_process_ratelimit(ch_bot_id);
 					if (is_limited)
 						{ return; }
 				}
@@ -215,6 +215,8 @@ namespace Polybius {
 			file.Close();
 		}
 
+		// Initialize rate-limiting queues if the request is from a new
+		// channel/bot combo.
 		static void try_init_ratelimit(ChannelBotPair id) {
 			if (!bot_queues_short.ContainsKey(id)) {
 				bot_queues_short.Add(id, new());
@@ -224,24 +226,28 @@ namespace Polybius {
 			}
 		}
 
+		// Advance the rate-limiting queue, but not if the rate-limit has
+		// been hit.
+		// Returns `true` if rate-limit is not hit; `false` if it is.
 		static bool try_process_ratelimit(ChannelBotPair id) {
 			DateTime now = DateTime.Now;
+
 			if (bot_queues_short[id].Count >= rate_short) {
 				if (now - bot_queues_short[id].Peek() < ratelimit_short)
-					{ return true; }
+					{ return false; }
 				else
 					{ bot_queues_short[id].Dequeue(); }
 			}
 			if (bot_queues_long[id].Count >= rate_long) {
 				if (now - bot_queues_long[id].Peek() < ratelimit_long)
-					{ return true; }
+					{ return false; }
 				else
 					{ bot_queues_long[id].Dequeue(); }
 			}
 
 			bot_queues_short[id].Enqueue(now);
 			bot_queues_long[id].Enqueue(now);
-			return false;
+			return true;
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
