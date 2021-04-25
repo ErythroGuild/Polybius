@@ -1,4 +1,4 @@
-using DSharpPlus;		// C# Discord API
+﻿using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -123,29 +123,10 @@ namespace Polybius {
 				if (msg.Author.IsBot) {
 					ChannelBotPair ch_bot_id = new (msg.ChannelId, msg.Author.Id);
 
-					if (!bot_queues_short.ContainsKey(ch_bot_id)) {
-						bot_queues_short.Add(ch_bot_id, new ());
-					}
-					if (!bot_queues_long.ContainsKey(ch_bot_id)) {
-						bot_queues_long.Add(ch_bot_id, new ());
-					}
-
-					DateTime now = DateTime.Now;
-					if (bot_queues_short[ch_bot_id].Count >= rate_short) {
-						if (now - bot_queues_short[ch_bot_id].Peek() < ratelimit_short)
-							{ return; }
-						else
-							{ bot_queues_short[ch_bot_id].Dequeue(); }
-					}
-					if (bot_queues_long[ch_bot_id].Count >= rate_long) {
-						if (now - bot_queues_long[ch_bot_id].Peek() < ratelimit_long)
-							{ return; }
-						else
-							{ bot_queues_long[ch_bot_id].Dequeue(); }
-					}
-
-					bot_queues_short[ch_bot_id].Enqueue(now);
-					bot_queues_long[ch_bot_id].Enqueue(now);
+					try_init_ratelimit(ch_bot_id);
+					bool is_limited = try_process_ratelimit(ch_bot_id);
+					if (is_limited)
+						{ return; }
 				}
 				
 				List<string> tokens = ExtractTokens(e.Message.Content);
@@ -232,6 +213,35 @@ namespace Polybius {
 			StreamWriter file = new StreamWriter(file_path);
 			file.WriteLine(guild.Name);
 			file.Close();
+		}
+
+		static void try_init_ratelimit(ChannelBotPair id) {
+			if (!bot_queues_short.ContainsKey(id)) {
+				bot_queues_short.Add(id, new());
+			}
+			if (!bot_queues_long.ContainsKey(id)) {
+				bot_queues_long.Add(id, new());
+			}
+		}
+
+		static bool try_process_ratelimit(ChannelBotPair id) {
+			DateTime now = DateTime.Now;
+			if (bot_queues_short[id].Count >= rate_short) {
+				if (now - bot_queues_short[id].Peek() < ratelimit_short)
+					{ return true; }
+				else
+					{ bot_queues_short[id].Dequeue(); }
+			}
+			if (bot_queues_long[id].Count >= rate_long) {
+				if (now - bot_queues_long[id].Peek() < ratelimit_long)
+					{ return true; }
+				else
+					{ bot_queues_long[id].Dequeue(); }
+			}
+
+			bot_queues_short[id].Enqueue(now);
+			bot_queues_long[id].Enqueue(now);
+			return false;
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
