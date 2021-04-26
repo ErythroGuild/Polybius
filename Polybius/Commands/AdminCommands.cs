@@ -1,6 +1,6 @@
 ﻿using DSharpPlus.Entities;
 
-namespace Polybius {
+namespace Polybius.Commands {
 	class AdminCommands {
 		public static void exit(string arg, DiscordMessage msg) {
 		}
