@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Polybius {
 	using ChannelBotPair = Tuple<ulong, ulong>;
+	using CommandTable = Dictionary<string, Action<string, DiscordMessage>>;
 
 	class Program {
 		private static DiscordClient polybius;
@@ -20,14 +21,45 @@ namespace Polybius {
 			bot_queues_short = new (),
 			bot_queues_long = new ();
 
+		private const string path_token = @"config/token.txt";
+		private const string url_search = @"https://www.wowdb.com/search?search=";
+		private const int color_embed = 0x9A61F1;
+
+		// Rate limits on responses to bot messages.
 		private static readonly TimeSpan
 			ratelimit_short = TimeSpan.FromSeconds(10),
 			ratelimit_long = TimeSpan.FromMinutes(1);
 		private const int rate_short = 5, rate_long = 8;
 
-		private const string path_token = @"config/token.txt";
-		private const string url_search = @"https://www.wowdb.com/search?search=";
-		private const int color_embed = 0x9A61F1;
+		private static readonly CommandTable command_list = new () {
+			{ "help", HelpCommand.main },
+			{ "h"	, HelpCommand.main },
+			{ "?"	, HelpCommand.main },
+			{ "blacklist"		, ServerCommands.blacklist		},
+			{ "whitelist"		, ServerCommands.whitelist		},
+			{ "bot-channel"		, ServerCommands.bot_channel	},
+			{ "botspam"			, ServerCommands.bot_channel	},
+			{ "view-filters"	, ServerCommands.view_filters	},
+			{ "view-blacklist"	, ServerCommands.view_filters	},
+			{ "view-whitelist"	, ServerCommands.view_filters	},
+			{ "set-token-l"		, ServerCommands.set_token_L	},
+			{ "set-token-r"		, ServerCommands.set_token_R	},
+			{ "set-split"		, ServerCommands.set_split		},
+			{ "view-tokens"		, ServerCommands.view_tokens	},
+			{ "view-token"		, ServerCommands.view_tokens	},
+			{ "stats"			, ServerCommands.stats			},
+			{ "exit"			, AdminCommands.exit			},
+			{ "end"				, AdminCommands.exit			},
+			{ "kill"			, AdminCommands.exit			},
+			{ "terminate"		, AdminCommands.exit			},
+			{ "restart"			, AdminCommands.restart			},
+			{ "reboot"			, AdminCommands.restart			},
+			{ "suspend_db"		, AdminCommands.suspend_db		},
+			{ "resume_db"		, AdminCommands.resume_db		},
+			{ "refresh_servers"	, AdminCommands.refresh_guilds	},
+			{ "refresh_guilds"	, AdminCommands.refresh_guilds	},
+			{ "global_stats"	, AdminCommands.global_stats	},
+		};
 
 		static void Main() {
 			const string title_ascii =
@@ -52,7 +84,7 @@ namespace Polybius {
 					polybius.UpdateStatusAsync(helptext);
 
 					Console.WriteLine("Connected to discord servers.");
-					Console.WriteLine("Connected to " + polybius.Guilds.Count + " server(s).");
+					Console.WriteLine($"Connected to {polybius.Guilds.Count} server(s).");
 					Console.WriteLine("Monitoring messages...\n");
 				});
 
@@ -91,8 +123,8 @@ namespace Polybius {
 					// `settings.txt`
 					string path_dir = Settings.path_save_base +
 						e.Guild.Id.ToString();
-					string path_name = path_dir + "/" + Settings.path_name_file;
-					string path_save = path_dir + "/" + Settings.path_save_file;
+					string path_name = $"{path_dir}/{Settings.path_name_file}";
+					string path_save = $"{path_dir}/{Settings.path_save_file}";
 					if (File.Exists(path_name)) {
 						File.Delete(path_name);
 					}
@@ -123,30 +155,32 @@ namespace Polybius {
 				if (msg.Author.IsBot) {
 					ChannelBotPair ch_bot_id = new (msg.ChannelId, msg.Author.Id);
 
-					if (!bot_queues_short.ContainsKey(ch_bot_id)) {
-						bot_queues_short.Add(ch_bot_id, new ());
-					}
-					if (!bot_queues_long.ContainsKey(ch_bot_id)) {
-						bot_queues_long.Add(ch_bot_id, new ());
-					}
+					try_init_ratelimit(ch_bot_id);
+					bool is_limited = !try_process_ratelimit(ch_bot_id);
+					if (is_limited)
+						{ return; }
+				}
 
-					DateTime now = DateTime.Now;
-					if (bot_queues_short[ch_bot_id].Count >= rate_short) {
-						if (now - bot_queues_short[ch_bot_id].Peek() < ratelimit_short)
-							{ return; }
-						else
-							{ bot_queues_short[ch_bot_id].Dequeue(); }
-					}
-					if (bot_queues_long[ch_bot_id].Count >= rate_long) {
-						if (now - bot_queues_long[ch_bot_id].Peek() < ratelimit_long)
-							{ return; }
-						else
-							{ bot_queues_long[ch_bot_id].Dequeue(); }
-					}
+				// Trim (but not trailing) leading whitespace.
+				string msg_text = msg.Content.TrimStart();
 
-					bot_queues_short[ch_bot_id].Enqueue(now);
-					bot_queues_long[ch_bot_id].Enqueue(now);
-					return;
+				// Respond to commands (prefix is mention string).
+				string mention_str = polybius.CurrentUser.Mention;
+				if (msg_text.StartsWith(mention_str)) {
+					msg_text = msg_text[mention_str.Length..];
+					msg_text = msg_text.TrimStart();
+
+					if (msg_text.StartsWith("-")) {
+						msg_text = msg_text[1..];
+						string[] msg_split = msg_text.Split(' ', 2);
+						string cmd = msg_split[0].ToLower();
+						string arg = msg_split[1];
+
+						if (command_list.ContainsKey(cmd)) {
+							command_list[cmd](arg, msg);
+							return;
+						}
+					}
 				}
 				
 				List<string> tokens = ExtractTokens(e.Message.Content);
@@ -233,6 +267,41 @@ namespace Polybius {
 			StreamWriter file = new StreamWriter(file_path);
 			file.WriteLine(guild.Name);
 			file.Close();
+		}
+
+		// Initialize rate-limiting queues if the request is from a new
+		// channel/bot combo.
+		static void try_init_ratelimit(ChannelBotPair id) {
+			if (!bot_queues_short.ContainsKey(id)) {
+				bot_queues_short.Add(id, new());
+			}
+			if (!bot_queues_long.ContainsKey(id)) {
+				bot_queues_long.Add(id, new());
+			}
+		}
+
+		// Advance the rate-limiting queue, but not if the rate-limit has
+		// been hit.
+		// Returns `true` if rate-limit is not hit; `false` if it is.
+		static bool try_process_ratelimit(ChannelBotPair id) {
+			DateTime now = DateTime.Now;
+
+			if (bot_queues_short[id].Count >= rate_short) {
+				if (now - bot_queues_short[id].Peek() < ratelimit_short)
+					{ return false; }
+				else
+					{ bot_queues_short[id].Dequeue(); }
+			}
+			if (bot_queues_long[id].Count >= rate_long) {
+				if (now - bot_queues_long[id].Peek() < ratelimit_long)
+					{ return false; }
+				else
+					{ bot_queues_long[id].Dequeue(); }
+			}
+
+			bot_queues_short[id].Enqueue(now);
+			bot_queues_long[id].Enqueue(now);
+			return true;
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
