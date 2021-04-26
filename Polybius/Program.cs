@@ -1,4 +1,4 @@
-using DSharpPlus;		// C# Discord API
+﻿using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -32,9 +32,33 @@ namespace Polybius {
 		private const int rate_short = 5, rate_long = 8;
 
 		private static readonly CommandTable command_list = new () {
-			{ "help"	, HelpCommand.main },
-			{ "h"		, HelpCommand.main },
-			{ "?"		, HelpCommand.main }
+			{ "help", HelpCommand.main },
+			{ "h"	, HelpCommand.main },
+			{ "?"	, HelpCommand.main },
+			{ "blacklist"		, ServerCommands.blacklist		},
+			{ "whitelist"		, ServerCommands.whitelist		},
+			{ "bot-channel"		, ServerCommands.bot_channel	},
+			{ "botspam"			, ServerCommands.bot_channel	},
+			{ "view-filters"	, ServerCommands.view_filters	},
+			{ "view-blacklist"	, ServerCommands.view_filters	},
+			{ "view-whitelist"	, ServerCommands.view_filters	},
+			{ "set-token-l"		, ServerCommands.set_token_L	},
+			{ "set-token-r"		, ServerCommands.set_token_R	},
+			{ "set-split"		, ServerCommands.set_split		},
+			{ "view-tokens"		, ServerCommands.view_tokens	},
+			{ "view-token"		, ServerCommands.view_tokens	},
+			{ "stats"			, ServerCommands.stats			},
+			{ "exit"			, AdminCommands.exit			},
+			{ "end"				, AdminCommands.exit			},
+			{ "kill"			, AdminCommands.exit			},
+			{ "terminate"		, AdminCommands.exit			},
+			{ "restart"			, AdminCommands.restart			},
+			{ "reboot"			, AdminCommands.restart			},
+			{ "suspend_db"		, AdminCommands.suspend_db		},
+			{ "resume_db"		, AdminCommands.resume_db		},
+			{ "refresh_servers"	, AdminCommands.refresh_guilds	},
+			{ "refresh_guilds"	, AdminCommands.refresh_guilds	},
+			{ "global_stats"	, AdminCommands.global_stats	},
 		};
 
 		static void Main() {
