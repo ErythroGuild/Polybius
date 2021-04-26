@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -8,6 +8,12 @@ namespace Polybius {
 		// Regex group names.
 		public const string
 			group_query = "query", group_meta = "meta";
+
+		// Default regex tokens.
+		public const string
+			token_L_default = "[[",
+			token_R_default = "]]",
+			split_default = "|";
 
 		// `config/guild-{guild_id}/settings.txt`
 		public const string
@@ -60,13 +66,23 @@ namespace Polybius {
 		public Settings(ulong id) {
 			this.id = id;
 			_do_log_stats = true;
-			_token_L = "[["; _split = "|"; _token_R = "]]";
+			_token_L = token_L_default;
+			_token_R = token_R_default;
+			_split = split_default;
 			_ch_bot = null;
 			_ch_whitelist = new ();
 			_ch_blacklist = new ();
 		}
 
-		public Regex regex_token() {
+		public static Regex regex_query_default() {
+			return new Regex(
+				$@"{Regex.Escape(token_L_default)}(?<{group_query}>.+?)" +
+				$@"(?:{Regex.Escape(split_default)}(?<{group_meta}>.+?))?" +
+				$@"{Regex.Escape(token_R_default)}",
+				RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		}
+
+		public Regex regex_query() {
 			// e.g.:
 			// \Q[[\E(?<query>.+?)(?:\Q|\E(?<meta>.+?))?\Q]]\E
 			string regex_str =
