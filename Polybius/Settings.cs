@@ -143,7 +143,7 @@ namespace Polybius {
 					{ val += entry + delim_entry; }
 				// trim the trailing delimiter
 				if (val.EndsWith(delim_entry))
-					{ val = val.Remove(val.LastIndexOf(delim_entry)); }
+					{ val = val[..^delim_entry.Length]; }
 				SaveVal(key, val);
 			}
 
