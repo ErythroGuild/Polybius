@@ -15,7 +15,8 @@ namespace Polybius {
 	using CommandTable = Dictionary<string, Action<string, DiscordMessage>>;
 
 	class Program {
-		record ChannelBotPair(ulong ch, ulong bot);
+		public record QueryMetaPair(string query, string meta);
+		private record ChannelBotPair(ulong ch, ulong bot);
 
 		private static DiscordClient polybius;
 		private static HtmlWeb http;
@@ -186,9 +187,11 @@ namespace Polybius {
 					}
 				}
 				
-				List<string> tokens = ExtractTokens(e.Message.Content);
-				if (tokens.Count > 0) {
-					_ = e.Message.Channel.TriggerTypingAsync();
+				// Check for queries and exit if none are found.
+				List<QueryMetaPair> queries =
+					extract_queries(msg_text, msg.Channel?.GuildId ?? null);
+				if (queries.Count == 0)
+					{ return; }
 
 					// TODO: try/catch search failures
 					foreach (string token in tokens) {
@@ -308,21 +311,24 @@ namespace Polybius {
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
-		static List<string> ExtractTokens(string msg) {
-			string regex_token_str = @"\[\[(.+?)\]\]";
-
-			List<string> tokens = new List<string>();
-
-			Regex regex_token = new Regex(regex_token_str,
-				RegexOptions.Compiled | RegexOptions.IgnoreCase);
-			MatchCollection matches = regex_token.Matches(msg);
-
-			foreach (Match match in matches) {
-				string token = match.Groups[1].Value;
-				tokens.Add(token);
+		static List<QueryMetaPair> extract_queries(string msg, ulong? guild_id) {
+			Regex regex_query;
+			if (guild_id is null) {
+				regex_query = Settings.regex_query_default();
+			} else {
+				regex_query = settings[(ulong)guild_id].regex_query();
 			}
 
-			return tokens;
+			List<QueryMetaPair> queries = new ();
+			MatchCollection matches = regex_query.Matches(msg);
+			foreach (Match match in matches) {
+				string query = match.Groups[Settings.group_query].Value;
+				string meta = match.Groups[Settings.group_meta].Value;
+				meta = meta.Trim();
+				queries.Add(new (query, meta));
+			}
+
+			return queries;
 		}
 
 		// Get search results.
