@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -70,9 +70,9 @@ namespace Polybius {
 			// e.g.:
 			// \Q[[\E(?<query>.+?)(?:\Q|\E(?<meta>.+?))?\Q]]\E
 			string regex_str =
-				$@"\Q{token_L}\E(?<{group_query}>.+?)" +
-				$@"(?:\Q{split}\E(?<{group_meta}>.+?))?" +
-				$@"\Q{token_R}\E";
+				$@"{Regex.Escape(token_L)}(?<{group_query}>.+?)" +
+				$@"(?:{Regex.Escape(split)}(?<{group_meta}>.+?))?" +
+				$@"{Regex.Escape(token_R)}";
 			return new Regex(regex_str,
 				RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		}
