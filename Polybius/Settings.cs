@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -200,30 +200,30 @@ namespace Polybius {
 
 				switch (key) {
 				case key_log_stats:
-					settings.do_log_stats = Convert.ToBoolean(val);
+					settings._do_log_stats = Convert.ToBoolean(val);
 					break;
 				case key_token_L:
-					settings.token_L = val;
+					settings._token_L = val;
 					break;
 				case key_token_R:
-					settings.token_R = val;
+					settings._token_R = val;
 					break;
 				case key_split:
-					settings.split = val;
+					settings._split = val;
 					break;
 
 				case key_ch_bot:
 					if (val == str_null)
-						{ settings.ch_bot = null; }
+						{ settings._ch_bot = null; }
 					else
-						{ settings.ch_bot = Convert.ToUInt64(val); }
+						{ settings._ch_bot = Convert.ToUInt64(val); }
 					break;
 
 				case key_ch_whitelist:
 					string[] vals_whitelist = val.Split(delim_entry);
 					if (vals_whitelist[0] != "") {
 						foreach (string entry in vals_whitelist) {
-							settings.ch_whitelist.Add(Convert.ToUInt64(entry));
+							settings._ch_whitelist.Add(Convert.ToUInt64(entry));
 						}
 					}
 					break;
