@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Polybius {
 	using ChannelBotPair = Tuple<ulong, ulong>;
-	using CommandTable = Dictionary<string, Action<string>>;
+	using CommandTable = Dictionary<string, Action<string, DiscordMessage>>;
 
 	class Program {
 		private static DiscordClient polybius;
@@ -153,7 +153,7 @@ namespace Polybius {
 						string arg = msg_split[1];
 
 						if (command_list.ContainsKey(cmd)) {
-							command_list[cmd](arg);
+							command_list[cmd](arg, msg);
 						}
 					}
 				}
@@ -279,8 +279,7 @@ namespace Polybius {
 			return true;
 		}
 
-		static void cmd_help(string arg) {
-
+		static void cmd_help(string arg, DiscordMessage msg) {
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
