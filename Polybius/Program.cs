@@ -1,4 +1,4 @@
-﻿using DSharpPlus;		// C# Discord API
+using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -9,10 +9,11 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Polybius {
-	using ChannelBotPair = Tuple<ulong, ulong>;
 	using CommandTable = Dictionary<string, Action<string, DiscordMessage>>;
 
 	class Program {
+		record ChannelBotPair(ulong ch, ulong bot);
+
 		private static DiscordClient polybius;
 		private static HtmlWeb http;
 
@@ -147,9 +148,8 @@ namespace Polybius {
 				DiscordMessage msg = e.Message;
 
 				// Never respond to self!
-				if (msg.Author == polybius.CurrentUser) {
-					return;
-				}
+				if (msg.Author == polybius.CurrentUser)
+					{ return; }
 
 				// Rate-limit responses to other bots.
 				if (msg.Author.IsBot) {
@@ -273,10 +273,10 @@ namespace Polybius {
 		// channel/bot combo.
 		static void try_init_ratelimit(ChannelBotPair id) {
 			if (!bot_queues_short.ContainsKey(id)) {
-				bot_queues_short.Add(id, new());
+				bot_queues_short.Add(id, new ());
 			}
 			if (!bot_queues_long.ContainsKey(id)) {
-				bot_queues_long.Add(id, new());
+				bot_queues_long.Add(id, new ());
 			}
 		}
 
