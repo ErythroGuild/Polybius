@@ -1,12 +1,15 @@
-using DSharpPlus;		// C# Discord API
-using DSharpPlus.Entities;
-using HtmlAgilityPack;	// HTTP client + HTML parser
-
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
+using DSharpPlus;       // C# Discord API
+using DSharpPlus.Entities;
+using HtmlAgilityPack;  // HTTP client + HTML parser
+
+using Polybius.Commands;
+using Polybius.Engines;
 
 namespace Polybius {
 	using CommandTable = Dictionary<string, Action<string, DiscordMessage>>;
