@@ -1,4 +1,4 @@
-﻿using DSharpPlus;		// C# Discord API
+using DSharpPlus;		// C# Discord API
 using DSharpPlus.Entities;
 using HtmlAgilityPack;	// HTTP client + HTML parser
 
@@ -149,7 +149,7 @@ namespace Polybius {
 					if (msg_text.StartsWith("-")) {
 						msg_text = msg_text[1..];
 						string[] msg_split = msg_text.Split(' ', 2);
-						string cmd = msg_split[0];
+						string cmd = msg_split[0].ToLower();
 						string arg = msg_split[1];
 
 						if (command_list.ContainsKey(cmd)) {
