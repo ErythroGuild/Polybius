@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Polybius {
 	using ChannelBotPair = Tuple<ulong, ulong>;
+	using CommandTable = Dictionary<string, Action<string>>;
 
 	class Program {
 		private static DiscordClient polybius;
@@ -20,14 +21,21 @@ namespace Polybius {
 			bot_queues_short = new (),
 			bot_queues_long = new ();
 
+		private const string path_token = @"config/token.txt";
+		private const string url_search = @"https://www.wowdb.com/search?search=";
+		private const int color_embed = 0x9A61F1;
+
+		// Rate limits on responses to bot messages.
 		private static readonly TimeSpan
 			ratelimit_short = TimeSpan.FromSeconds(10),
 			ratelimit_long = TimeSpan.FromMinutes(1);
 		private const int rate_short = 5, rate_long = 8;
 
-		private const string path_token = @"config/token.txt";
-		private const string url_search = @"https://www.wowdb.com/search?search=";
-		private const int color_embed = 0x9A61F1;
+		private static readonly CommandTable command_list = new () {
+			{ "help"	, cmd_help },
+			{ "h"		, cmd_help },
+			{ "?"		, cmd_help }
+		};
 
 		static void Main() {
 			const string title_ascii =
@@ -127,6 +135,27 @@ namespace Polybius {
 					bool is_limited = !try_process_ratelimit(ch_bot_id);
 					if (is_limited)
 						{ return; }
+				}
+
+				// Trim (but not trailing) leading whitespace.
+				string msg_text = msg.Content.TrimStart();
+
+				// Respond to commands (prefix is mention string).
+				string mention_str = polybius.CurrentUser.Mention;
+				if (msg_text.StartsWith(mention_str)) {
+					msg_text = msg_text[mention_str.Length..];
+					msg_text = msg_text.TrimStart();
+
+					if (msg_text.StartsWith("-")) {
+						msg_text = msg_text[1..];
+						string[] msg_split = msg_text.Split(' ', 2);
+						string cmd = msg_split[0];
+						string arg = msg_split[1];
+
+						if (command_list.ContainsKey(cmd)) {
+							command_list[cmd](arg);
+						}
+					}
 				}
 				
 				List<string> tokens = ExtractTokens(e.Message.Content);
@@ -248,6 +277,10 @@ namespace Polybius {
 			bot_queues_short[id].Enqueue(now);
 			bot_queues_long[id].Enqueue(now);
 			return true;
+		}
+
+		static void cmd_help(string arg) {
+
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
