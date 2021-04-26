@@ -178,6 +178,7 @@ namespace Polybius {
 
 						if (command_list.ContainsKey(cmd)) {
 							command_list[cmd](arg, msg);
+							return;
 						}
 					}
 				}
