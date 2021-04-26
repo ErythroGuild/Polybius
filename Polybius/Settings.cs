@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -231,7 +231,7 @@ namespace Polybius {
 					string[] vals_blacklist = val.Split(delim_entry);
 					if (vals_blacklist[0] != "") {
 						foreach (string entry in vals_blacklist) {
-							settings.ch_whitelist.Add(Convert.ToUInt64(entry));
+							settings._ch_blacklist.Add(Convert.ToUInt64(entry));
 						}
 					}
 					break;
