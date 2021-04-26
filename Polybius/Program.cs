@@ -32,9 +32,9 @@ namespace Polybius {
 		private const int rate_short = 5, rate_long = 8;
 
 		private static readonly CommandTable command_list = new () {
-			{ "help"	, cmd_help },
-			{ "h"		, cmd_help },
-			{ "?"		, cmd_help }
+			{ "help"	, HelpCommand.main },
+			{ "h"		, HelpCommand.main },
+			{ "?"		, HelpCommand.main }
 		};
 
 		static void Main() {
@@ -277,9 +277,6 @@ namespace Polybius {
 			bot_queues_short[id].Enqueue(now);
 			bot_queues_long[id].Enqueue(now);
 			return true;
-		}
-
-		static void cmd_help(string arg, DiscordMessage msg) {
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
