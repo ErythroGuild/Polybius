@@ -308,6 +308,7 @@ namespace Polybius {
 			MatchCollection matches = regex_query.Matches(msg);
 			foreach (Match match in matches) {
 				string query = match.Groups[Settings.group_query].Value;
+				query = query.Trim().ToLower();
 				string meta = match.Groups[Settings.group_meta].Value;
 				meta = meta.Trim();
 				queries.Add(new (query, meta));
