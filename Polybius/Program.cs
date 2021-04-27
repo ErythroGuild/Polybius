@@ -331,6 +331,20 @@ namespace Polybius {
 			return queries;
 		}
 
+		// Determine the correct channel to reply in.
+		static async Task<DiscordChannel> find_reply_channel(DiscordMessage msg) {
+			if (msg.Channel.GuildId is null)
+				{ return msg.Channel; }
+
+			ulong? ch_bot =
+				settings[(ulong)msg.Channel.GuildId].ch_bot;
+			if (ch_bot is null) { 
+				return msg.Channel;
+			} else {
+				return await polybius.GetChannelAsync((ulong)ch_bot);
+			}
+		}
+
 		// Get search results.
 		// TODO: search different types of entries one-by-one
 		static List<Entry> SearchDB(string q) {
