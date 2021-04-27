@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -196,7 +196,7 @@ namespace Polybius {
 					if (queries.Count == 0)
 						{ return; }
 
-					_ = msg.Channel.TriggerTypingAsync();
+					await msg.Channel.TriggerTypingAsync();
 
 					foreach (QueryMetaPair query in queries) {
 						Console.WriteLine($"\nQuery parsed: {query.query}, {query.meta}");
