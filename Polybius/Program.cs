@@ -148,94 +148,79 @@ namespace Polybius {
 				});
 
 			// Received a message from any readable channel.
-			polybius.MessageCreated += async (polybius, e) => {
-				DiscordMessage msg = e.Message;
+			polybius.MessageCreated += async (polybius, e) => 
+				await Task.Run(async () => {
+					DiscordMessage msg = e.Message;
 
-				// Never respond to self!
-				if (msg.Author == polybius.CurrentUser)
-					{ return; }
-
-				// Rate-limit responses to other bots.
-				if (msg.Author.IsBot) {
-					ChannelBotPair ch_bot_id = new (msg.ChannelId, msg.Author.Id);
-
-					try_init_ratelimit(ch_bot_id);
-					bool is_limited = !try_process_ratelimit(ch_bot_id);
-					if (is_limited)
+					// Never respond to self!
+					if (msg.Author == polybius.CurrentUser)
 						{ return; }
-				}
 
-				// Trim (but not trailing) leading whitespace.
-				string msg_text = msg.Content.TrimStart();
+					// Rate-limit responses to other bots.
+					if (msg.Author.IsBot) {
+						ChannelBotPair ch_bot_id = new (msg.ChannelId, msg.Author.Id);
 
-				// Respond to commands (prefix is mention string).
-				string mention_str = polybius.CurrentUser.Mention;
-				if (msg_text.StartsWith(mention_str)) {
-					msg_text = msg_text[mention_str.Length..];
-					msg_text = msg_text.TrimStart();
+						try_init_ratelimit(ch_bot_id);
+						bool is_limited = !try_process_ratelimit(ch_bot_id);
+						if (is_limited)
+							{ return; }
+					}
 
-					if (msg_text.StartsWith("-")) {
-						msg_text = msg_text[1..];
-						string[] msg_split = msg_text.Split(' ', 2);
-						string cmd = msg_split[0].ToLower();
-						string arg = msg_split[1];
+					// Check that channel is legal to respond in.
 
-						if (command_list.ContainsKey(cmd)) {
-							command_list[cmd](arg, msg);
+					// Trim (but not trailing) leading whitespace.
+					string msg_text = msg.Content.TrimStart();
+
+					// Respond to commands (prefix is mention string).
+					string mention_str = polybius.CurrentUser.Mention;
+					if (msg_text.StartsWith(mention_str)) {
+						msg_text = msg_text[mention_str.Length..];
+						msg_text = msg_text.TrimStart();
+
+						if (msg_text.StartsWith("-")) {
+							msg_text = msg_text[1..];
+							string[] msg_split = msg_text.Split(' ', 2);
+							string cmd = msg_split[0].ToLower();
+							string arg = msg_split[1];
+
+							if (command_list.ContainsKey(cmd)) {
+								command_list[cmd](arg, msg);
+								return;
+							}
+						}
+					}
+				
+					// Check for queries and exit if none are found.
+					List<QueryMetaPair> queries =
+						extract_queries(msg_text, msg.Channel?.GuildId ?? null);
+					if (queries.Count == 0)
+						{ return; }
+
+					_ = msg.Channel.TriggerTypingAsync();
+
+					foreach (QueryMetaPair query in queries) {
+						Console.WriteLine($"\nQuery parsed: {query.query}, {query.meta}");
+
+						List<SearchResult> results = new ();
+						results.AddRange(EasterEggEngine.search(query));
+
+						if (results.Count == 0) {
+							Console.WriteLine("> No results found.");
+							_ = msg.RespondAsync($"No results found for `{query.query}`.");
 							return;
 						}
-					}
-				}
-				
-				// Check for queries and exit if none are found.
-				List<QueryMetaPair> queries =
-					extract_queries(msg_text, msg.Channel?.GuildId ?? null);
-				if (queries.Count == 0)
-					{ return; }
 
-					// TODO: try/catch search failures
-					foreach (string token in tokens) {
-						Console.WriteLine("\nToken parsed: " + token);
-
-						List<Entry> entries = SearchDB(token);
-						// Courtesy message on 0 results.
-						if (entries.Count == 0) {
-							Console.WriteLine("> No results found.");
-							await e.Message.RespondAsync("No results found for `" + token + "`.");
-						}
-						foreach (Entry entry in entries) {
-							string title = "**" + entry.name + "**";
-							// TODO: add clarification for battle pet abilities, etc.
-
-							string tooltip = ExtractTooltip(GetTooltipNode(entry), entry.type);
-							tooltip = Sanitizer.SanitizeTooltip(tooltip);
-							
-							string url_wowhead = GetWowhead(entry);
-							string str_details =
-								"*Details: " +
-								"[WoWDB](" + entry.URL + ") \u2022 " +
-								"[Wowhead](" + url_wowhead + ") \u2022 " +
-								"[Comments](" + url_wowhead + "#comments)" +
-								"*";
-							tooltip += "\n\n" + str_details;
-
-							string url_thumbnail = GetThumbnail(entry);
-							Console.WriteLine("> thumb: " + url_thumbnail);
-							// TODO: do not write this line if no thumbnail
-
-							DiscordEmbed embed = new DiscordEmbedBuilder()
-							.WithTitle(title)
-							.WithUrl(entry.URL)
-							.WithColor(new DiscordColor(color_embed))
-							.WithDescription(tooltip)
-							.WithThumbnail(url_thumbnail, 80, 80)
-							.WithFooter("powered by WoWDB");
-							
-							await e.Message.RespondAsync(embed);
+						foreach (SearchResult result in results) {
+							if (result.is_exact_match) {
+								DiscordChannel channel =
+									await find_reply_channel(msg);
+								_ = result.get_display()
+									.WithReply(msg.Id)
+									.SendAsync(channel);
+							}
 						}
 					}
-				}
-			};
+				});
 
 			await polybius.ConnectAsync();
 			await Task.Delay(-1);
