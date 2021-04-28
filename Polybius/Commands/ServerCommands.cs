@@ -1,6 +1,6 @@
 ﻿using DSharpPlus.Entities;
 
-namespace Polybius {
+namespace Polybius.Commands {
 	class ServerCommands {
 		public static void whitelist(string arg, DiscordMessage msg) {
 		}

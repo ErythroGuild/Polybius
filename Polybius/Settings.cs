@@ -9,6 +9,12 @@ namespace Polybius {
 		public const string
 			group_query = "query", group_meta = "meta";
 
+		// Default regex tokens.
+		public const string
+			token_L_default = "[[",
+			token_R_default = "]]",
+			split_default = "|";
+
 		// `config/guild-{guild_id}/settings.txt`
 		public const string
 			path_save_base = "config/guild-",
@@ -60,21 +66,29 @@ namespace Polybius {
 		public Settings(ulong id) {
 			this.id = id;
 			_do_log_stats = true;
-			_token_L = "[["; _split = "|"; _token_R = "]]";
+			_token_L = token_L_default;
+			_token_R = token_R_default;
+			_split = split_default;
 			_ch_bot = null;
 			_ch_whitelist = new ();
 			_ch_blacklist = new ();
 		}
 
-		public Regex regex_token() {
+		public static Regex regex_query_default() {
+			return new Regex(
+				$@"{Regex.Escape(token_L_default)}(?<{group_query}>.+?)" +
+				$@"(?:{Regex.Escape(split_default)}(?<{group_meta}>.+?))?" +
+				$@"{Regex.Escape(token_R_default)}", RegexOptions.IgnoreCase);
+		}
+
+		public Regex regex_query() {
 			// e.g.:
 			// \Q[[\E(?<query>.+?)(?:\Q|\E(?<meta>.+?))?\Q]]\E
 			string regex_str =
-				$@"\Q{token_L}\E(?<{group_query}>.+?)" +
-				$@"(?:\Q{split}\E(?<{group_meta}>.+?))?" +
-				$@"\Q{token_R}\E";
-			return new Regex(regex_str,
-				RegexOptions.Compiled | RegexOptions.IgnoreCase);
+				$@"{Regex.Escape(token_L)}(?<{group_query}>.+?)" +
+				$@"(?:{Regex.Escape(split)}(?<{group_meta}>.+?))?" +
+				$@"{Regex.Escape(token_R)}";
+			return new Regex(regex_str, RegexOptions.Compiled);
 		}
 
 		// Returns whether or not the bot is allowed to post in a channel,
@@ -184,30 +198,30 @@ namespace Polybius {
 
 				switch (key) {
 				case key_log_stats:
-					settings.do_log_stats = Convert.ToBoolean(val);
+					settings._do_log_stats = Convert.ToBoolean(val);
 					break;
 				case key_token_L:
-					settings.token_L = val;
+					settings._token_L = val;
 					break;
 				case key_token_R:
-					settings.token_R = val;
+					settings._token_R = val;
 					break;
 				case key_split:
-					settings.split = val;
+					settings._split = val;
 					break;
 
 				case key_ch_bot:
 					if (val == str_null)
-						{ settings.ch_bot = null; }
+						{ settings._ch_bot = null; }
 					else
-						{ settings.ch_bot = Convert.ToUInt64(val); }
+						{ settings._ch_bot = Convert.ToUInt64(val); }
 					break;
 
 				case key_ch_whitelist:
 					string[] vals_whitelist = val.Split(delim_entry);
 					if (vals_whitelist[0] != "") {
 						foreach (string entry in vals_whitelist) {
-							settings.ch_whitelist.Add(Convert.ToUInt64(entry));
+							settings._ch_whitelist.Add(Convert.ToUInt64(entry));
 						}
 					}
 					break;
@@ -215,7 +229,7 @@ namespace Polybius {
 					string[] vals_blacklist = val.Split(delim_entry);
 					if (vals_blacklist[0] != "") {
 						foreach (string entry in vals_blacklist) {
-							settings.ch_whitelist.Add(Convert.ToUInt64(entry));
+							settings._ch_blacklist.Add(Convert.ToUInt64(entry));
 						}
 					}
 					break;
