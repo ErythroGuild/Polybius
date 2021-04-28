@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -163,7 +163,9 @@ namespace Polybius {
 							{ return; }
 					}
 
-					// Check that channel is legal to respond in.
+					// Check if channel is illegal to respond in.
+					if (!is_channel_tracked(msg.Channel))
+						{ return; }
 
 					// Trim leading whitespace.
 					string msg_text = msg.Content.TrimStart();
@@ -182,6 +184,8 @@ namespace Polybius {
 					if (queries.Count == 0)
 						{ return; }
 
+					// Indicate to the user that their query has been received
+					// and is currently being processed.
 					await msg.Channel.TriggerTypingAsync();
 
 					foreach (QueryMetaPair query in queries) {
@@ -276,6 +280,38 @@ namespace Polybius {
 			bot_queues_short[id].Enqueue(now);
 			bot_queues_long[id].Enqueue(now);
 			return true;
+		}
+
+		// Returns false if the channel should not be responded to,
+		// either in the channel itself or a bot channel.
+		static bool is_channel_tracked(DiscordChannel channel) {
+			// Track non-server channels.
+			if (channel.GuildId is null) {
+				return true;
+			}
+
+			ulong guild_id = (ulong)channel.GuildId;
+			ulong ch_id = channel.Id;
+
+			// Track the bot channel, if it exists.
+			if ((settings[guild_id].ch_bot is not null) &&
+				(settings[guild_id].ch_bot == ch_id)) {
+				return true;
+			}
+
+			// Never track any channel on the blacklist.
+			if (settings[guild_id].ch_blacklist.Contains(ch_id)) {
+				return false;
+			}
+
+			// If whitelist exists, only track channels on the whitelist.
+			if (settings[guild_id].ch_whitelist.Count == 0) {
+				return true;
+			} else if (settings[guild_id].ch_whitelist.Contains(ch_id)) {
+				return false;
+			} else {
+				return true;
+			}
 		}
 
 		// Process and call the response methods to any commands.
