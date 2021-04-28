@@ -4,9 +4,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-using DSharpPlus;       // C# Discord API
+using DSharpPlus;
 using DSharpPlus.Entities;
-using HtmlAgilityPack;  // HTTP client + HTML parser
 
 using Polybius.Commands;
 using Polybius.Engines;
@@ -19,7 +18,6 @@ namespace Polybius {
 		private record ChannelBotPair(ulong ch, ulong bot);
 
 		private static DiscordClient polybius;
-		private static HtmlWeb http;
 
 		private static Dictionary<ulong, Settings> settings = new ();
 		private static Dictionary<ChannelBotPair, Queue<DateTime>>
@@ -241,9 +239,6 @@ namespace Polybius {
 				Token = bot_token,
 				TokenType = TokenType.Bot
 			});
-
-			// Init HtmlAgilityPack parser.
-			http = new HtmlWeb();
 		}
 
 		// Updates the guild name of a specific guild.
