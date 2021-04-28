@@ -199,6 +199,7 @@ namespace Polybius {
 						Console.WriteLine($"\nQuery parsed: {query.query}, {query.meta}");
 
 						List<SearchResult> results = new ();
+						results.AddRange(WowheadEngine.search(query));
 						results.AddRange(EasterEggEngine.search(query));
 
 						if (results.Count == 0) {
