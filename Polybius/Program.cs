@@ -27,8 +27,7 @@ namespace Polybius {
 			bot_queues_long = new ();
 
 		private const string path_token = @"config/token.txt";
-		private const string url_search = @"https://www.wowdb.com/search?search=";
-		private const int color_embed = 0x9A61F1;
+		internal const int color_embed = 0x9A61F1;
 
 		// Rate limits on responses to bot messages.
 		private static readonly TimeSpan
