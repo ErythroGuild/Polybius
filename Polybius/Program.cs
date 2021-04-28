@@ -165,7 +165,7 @@ namespace Polybius {
 
 					// Check that channel is legal to respond in.
 
-					// Trim (but not trailing) leading whitespace.
+					// Trim leading whitespace.
 					string msg_text = msg.Content.TrimStart();
 
 					// Respond to commands (prefix is mention string).
@@ -173,18 +173,7 @@ namespace Polybius {
 					if (msg_text.StartsWith(mention_str)) {
 						msg_text = msg_text[mention_str.Length..];
 						msg_text = msg_text.TrimStart();
-
-						if (msg_text.StartsWith("-")) {
-							msg_text = msg_text[1..];
-							string[] msg_split = msg_text.Split(' ', 2);
-							string cmd = msg_split[0].ToLower();
-							string arg = msg_split[1];
-
-							if (command_list.ContainsKey(cmd)) {
-								command_list[cmd](arg, msg);
-								return;
-							}
-						}
+						process_commands(msg_text, msg);
 					}
 				
 					// Check for queries and exit if none are found.
@@ -287,6 +276,21 @@ namespace Polybius {
 			bot_queues_short[id].Enqueue(now);
 			bot_queues_long[id].Enqueue(now);
 			return true;
+		}
+
+		// Process and call the response methods to any commands.
+		static void process_commands(string input, DiscordMessage msg) {
+			if (input.StartsWith("-")) {
+				input = input[1..];
+				string[] msg_split = input.Split(' ', 2);
+				string cmd = msg_split[0].ToLower();
+				string arg = msg_split[1];
+
+				if (command_list.ContainsKey(cmd)) {
+					command_list[cmd](arg, msg);
+				}
+				return;
+			}
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
