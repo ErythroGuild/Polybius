@@ -79,8 +79,8 @@ namespace Polybius {
 			init_bot();
 
 			// Connected to discord servers (but not necessarily guilds yet!).
-			polybius.Ready += async (polybius, e) =>
-				 await Task.Run(() => {
+			polybius.Ready += (polybius, e) =>
+				 _ = Task.Run(() => {
 					DiscordActivity helptext =
 						new ("@Polybius -help", ActivityType.Watching);
 					polybius.UpdateStatusAsync(helptext);
@@ -91,8 +91,8 @@ namespace Polybius {
 				});
 
 			// Guild data has finished downloading.
-			polybius.GuildDownloadCompleted += async (polybius, e) =>
-				await Task.Run(() => {
+			polybius.GuildDownloadCompleted += (polybius, e) =>
+				_ = Task.Run(() => {
 					foreach (ulong id in e.Guilds.Keys) {
 						update_guild_name(e.Guilds[id]);
 
@@ -109,8 +109,8 @@ namespace Polybius {
 				});
 
 			// Was added to a new guild.
-			polybius.GuildCreated += async (polybius, e) =>
-				await Task.Run(() => {
+			polybius.GuildCreated += (polybius, e) =>
+				_ = Task.Run(() => {
 					update_guild_name(e.Guild);
 					Settings settings_guild = new (e.Guild.Id);
 					settings_guild.save();
@@ -118,8 +118,8 @@ namespace Polybius {
 				});
 
 			// Was removed from a guild.
-			polybius.GuildDeleted += async (polybius, e) =>
-				await Task.Run(() => {
+			polybius.GuildDeleted += (polybius, e) =>
+				_ = Task.Run(() => {
 					// Server data: `config/guild-{guild_id}/`
 					// `_server_name.txt`
 					// `settings.txt`
@@ -139,14 +139,14 @@ namespace Polybius {
 				});
 
 			// Any monitored guild has updated their info.
-			polybius.GuildUpdated += async (polybius, e) =>
-				await Task.Run(() => {
+			polybius.GuildUpdated += (polybius, e) =>
+				_ = Task.Run(() => {
 					update_guild_name(e.GuildAfter);
 				});
 
 			// Received a message from any readable channel.
-			polybius.MessageCreated += async (polybius, e) => 
-				await Task.Run(async () => {
+			polybius.MessageCreated += (polybius, e) => 
+				_ = Task.Run(async () => {
 					DiscordMessage msg = e.Message;
 
 					// Never respond to self!
