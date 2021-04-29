@@ -56,6 +56,7 @@ namespace Polybius {
 			{ "set-split"        , ServerCommands.set_split         },
 			{ "view-tokens"	     , ServerCommands.view_tokens       },
 			{ "view-token"       , ServerCommands.view_tokens       },
+			{ "reset-server-settings", ServerCommands.reset_server_settings },
 			{ "stats"            , ServerCommands.stats             },
 			{ "exit"           , AdminCommands.exit           },
 			{ "end"            , AdminCommands.exit           },

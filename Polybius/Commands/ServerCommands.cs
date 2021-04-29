@@ -57,7 +57,7 @@ namespace Polybius.Commands {
 					msg.Channel.Guild.GetChannel((ulong)ch_bot_old).Mention;
 				_ = msg.RespondAsync($":white_check_mark: Bot channel {mention} has been cleared.");
 			} else {
-				_ = msg.RespondAsync($":white_check_mark: No bot channel exists yet.\nNo changes have been made.");
+				_ = msg.RespondAsync(":white_check_mark: No bot channel exists yet.\nNo changes have been made.");
 			}
 		}
 
@@ -74,6 +74,11 @@ namespace Polybius.Commands {
 		}
 
 		public static void view_tokens(string arg, DiscordMessage msg) {
+		}
+
+		public static void reset_server_settings(string arg, DiscordMessage msg) {
+			_ = new Settings((ulong)msg.Channel.GuildId);
+			msg.RespondAsync(":white_check_mark: All server settings have been reset to their defaults.\n:information_source: Server statistics have not been reset.");
 		}
 
 		public static void stats(string arg, DiscordMessage msg) {
