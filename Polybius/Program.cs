@@ -40,6 +40,8 @@ namespace Polybius {
 			{ "blacklist"        , ServerCommands.blacklist         },
 			{ "whitelist"        , ServerCommands.whitelist         },
 			{ "bot-channel"      , ServerCommands.bot_channel       },
+			{ "bot-channel-set"  , ServerCommands.bot_channel       },
+			{ "set-bot-channel"  , ServerCommands.bot_channel       },
 			{ "clear-bot-channel", ServerCommands.bot_channel_clear },
 			{ "bot-channel-clear", ServerCommands.bot_channel_clear },
 			{ "unset-bot-channel", ServerCommands.bot_channel_clear },
