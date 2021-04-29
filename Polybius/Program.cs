@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -320,7 +320,9 @@ namespace Polybius {
 				input = input[1..];
 				string[] msg_split = input.Split(' ', 2);
 				string cmd = msg_split[0].ToLower();
-				string arg = msg_split[1];
+				string arg = "";
+				if (msg_split.Length > 1)
+					{ arg = msg_split[1]; }
 
 				if (command_list.ContainsKey(cmd)) {
 					command_list[cmd](arg, msg);
