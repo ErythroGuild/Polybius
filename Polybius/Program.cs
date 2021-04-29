@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -17,9 +17,9 @@ namespace Polybius {
 		public record QueryMetaPair(string query, string meta);
 		private record ChannelBotPair(ulong ch, ulong bot);
 
-		private static DiscordClient polybius;
+		internal static DiscordClient polybius;
 
-		private static Dictionary<ulong, Settings> settings = new ();
+		internal static Dictionary<ulong, Settings> settings = new ();
 		private static Dictionary<ChannelBotPair, Queue<DateTime>>
 			bot_queues_short = new (),
 			bot_queues_long = new ();
@@ -37,19 +37,24 @@ namespace Polybius {
 			{ "help", HelpCommand.main },
 			{ "h"   , HelpCommand.main },
 			{ "?"   , HelpCommand.main },
-			{ "blacklist"      , ServerCommands.blacklist     },
-			{ "whitelist"      , ServerCommands.whitelist     },
-			{ "bot-channel"    , ServerCommands.bot_channel   },
-			{ "botspam"        , ServerCommands.bot_channel   },
-			{ "view-filters"   , ServerCommands.view_filters  },
-			{ "view-blacklist" , ServerCommands.view_filters  },
-			{ "view-whitelist" , ServerCommands.view_filters  },
-			{ "set-token-l"    , ServerCommands.set_token_L   },
-			{ "set-token-r"    , ServerCommands.set_token_R   },
-			{ "set-split"      , ServerCommands.set_split     },
-			{ "view-tokens"	   , ServerCommands.view_tokens   },
-			{ "view-token"     , ServerCommands.view_tokens   },
-			{ "stats"          , ServerCommands.stats         },
+			{ "blacklist"        , ServerCommands.blacklist         },
+			{ "whitelist"        , ServerCommands.whitelist         },
+			{ "bot-channel"      , ServerCommands.bot_channel       },
+			{ "clear-bot-channel", ServerCommands.bot_channel_clear },
+			{ "bot-channel-clear", ServerCommands.bot_channel_clear },
+			{ "unset-bot-channel", ServerCommands.bot_channel_clear },
+			{ "bot-channel-unset", ServerCommands.bot_channel_clear },
+			{ "reset-bot-channel", ServerCommands.bot_channel_clear },
+			{ "bot-channel-reset", ServerCommands.bot_channel_clear },
+			{ "view-filters"     , ServerCommands.view_filters      },
+			{ "view-blacklist"   , ServerCommands.view_filters      },
+			{ "view-whitelist"   , ServerCommands.view_filters      },
+			{ "set-token-l"      , ServerCommands.set_token_L       },
+			{ "set-token-r"      , ServerCommands.set_token_R       },
+			{ "set-split"        , ServerCommands.set_split         },
+			{ "view-tokens"	     , ServerCommands.view_tokens       },
+			{ "view-token"       , ServerCommands.view_tokens       },
+			{ "stats"            , ServerCommands.stats             },
 			{ "exit"           , AdminCommands.exit           },
 			{ "end"            , AdminCommands.exit           },
 			{ "kill"           , AdminCommands.exit           },
