@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -7,9 +7,63 @@ using DSharpPlus.Entities;
 namespace Polybius.Commands {
 	class ServerCommands {
 		public static void whitelist(string arg, DiscordMessage msg) {
+			bool guild_exists = check_guild_exists(msg);
+			if (!guild_exists)
+				{ return; }
+			ulong guild_id = (ulong)msg.Channel.GuildId;
+			try_init_settings(guild_id);
+
+			ulong? ch_to_add = extract_channel_id(arg, msg);
+			if (ch_to_add is null) {
+				_ = msg.RespondAsync(":no_entry: Could not parse channel name.\nNo changes have been made.");
+				return;
+			}
+			HashSet<ulong> whitelist = Program.settings[guild_id].ch_whitelist;
+			string mention =
+				msg.Channel.Guild.GetChannel((ulong)ch_to_add).Mention;
+
+			if (whitelist.Contains((ulong)ch_to_add)) {
+				Program.settings[guild_id].ch_whitelist.Remove((ulong)ch_to_add);
+				_ = msg.RespondAsync($"The whitelist already contains {mention}.\n:white_check_mark: {mention} has been removed from the whitelist.");
+			} else {
+				Program.settings[guild_id].ch_whitelist.Add((ulong)ch_to_add);
+				string response = $":white_check_mark: {mention} has been added to the whitelist.";
+				if (Program.settings[guild_id].ch_blacklist.Contains((ulong)ch_to_add)) {
+					Program.settings[guild_id].ch_blacklist.Remove((ulong)ch_to_add);
+					response += $":white_check_mark: {mention} has been removed from the blacklist.";
+				}
+				_ = msg.RespondAsync(response);
+			}
 		}
 
 		public static void blacklist(string arg, DiscordMessage msg) {
+			bool guild_exists = check_guild_exists(msg);
+			if (!guild_exists)
+				{ return; }
+			ulong guild_id = (ulong)msg.Channel.GuildId;
+			try_init_settings(guild_id);
+
+			ulong? ch_to_add = extract_channel_id(arg, msg);
+			if (ch_to_add is null) {
+				_ = msg.RespondAsync(":no_entry: Could not parse channel name.\nNo changes have been made.");
+				return;
+			}
+			HashSet<ulong> blacklist = Program.settings[guild_id].ch_blacklist;
+			string mention =
+				msg.Channel.Guild.GetChannel((ulong)ch_to_add).Mention;
+
+			if (blacklist.Contains((ulong)ch_to_add)) {
+				Program.settings[guild_id].ch_blacklist.Remove((ulong)ch_to_add);
+				_ = msg.RespondAsync($"The blacklist already contains {mention}.\n:white_check_mark: {mention} has been removed from the blacklist.");
+			} else {
+				Program.settings[guild_id].ch_blacklist.Add((ulong)ch_to_add);
+				string response = $":white_check_mark: {mention} has been added to the blacklist.";
+				if (Program.settings[guild_id].ch_whitelist.Contains((ulong)ch_to_add)) {
+					Program.settings[guild_id].ch_whitelist.Remove((ulong)ch_to_add);
+					response += $":white_check_mark: {mention} has been removed from the whitelist.";
+				}
+				_ = msg.RespondAsync(response);
+			}
 		}
 
 		public static void bot_channel(string arg, DiscordMessage msg) {
