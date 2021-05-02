@@ -15,7 +15,7 @@ namespace Polybius.Commands {
 
 			ulong? ch_to_add = extract_channel_id(arg, msg);
 			if (ch_to_add is null) {
-				_ = msg.RespondAsync(":no_entry: Could not parse channel name.\nNo changes have been made.");
+				_ = msg.RespondAsync(":warning: Could not parse channel name.\nNo changes have been made.");
 				return;
 			}
 			HashSet<ulong> whitelist = Program.settings[guild_id].ch_whitelist;
@@ -46,7 +46,7 @@ namespace Polybius.Commands {
 
 			ulong? ch_to_add = extract_channel_id(arg, msg);
 			if (ch_to_add is null) {
-				_ = msg.RespondAsync(":no_entry: Could not parse channel name.\nNo changes have been made.");
+				_ = msg.RespondAsync(":warning: Could not parse channel name.\nNo changes have been made.");
 				return;
 			}
 			HashSet<ulong> blacklist = Program.settings[guild_id].ch_blacklist;
