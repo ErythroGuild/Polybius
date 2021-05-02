@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 using DSharpPlus.Entities;
@@ -15,24 +16,14 @@ namespace Polybius.Commands {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-
 			ulong guild_id = (ulong)msg.Channel.GuildId;
-			if (Program.settings[guild_id] is null) {
-				Program.settings.Add(guild_id, new (guild_id));
-			}
+			try_init_settings(guild_id);
 
-			ulong? ch_bot = null;
-			if (msg.MentionedChannels.Count == 1) {
-				ch_bot = msg.MentionedChannels[0].Id;
-			} else if (Regex.IsMatch(arg, @"\d+")) {
-				ch_bot = Convert.ToUInt64(arg);
-			} else {
-				arg = arg.ToLower();
-			}
-
+			ulong? ch_bot = extract_channel_id(arg, msg);
 			ulong? ch_bot_old = Program.settings[guild_id].ch_bot;
 			string mention =
 				msg.Channel.Guild.GetChannel((ulong)ch_bot).Mention;
+
 			if (ch_bot == ch_bot_old) {
 				_ = msg.RespondAsync($":white_check_mark: Bot channel is already {mention}.\nNo changes have been made.");
 			} else {
@@ -44,11 +35,8 @@ namespace Polybius.Commands {
 		public static void bot_channel_clear(string arg, DiscordMessage msg) {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists) { return; }
-
 			ulong guild_id = (ulong)msg.Channel.GuildId;
-			if (Program.settings[guild_id] is null) {
-				Program.settings.Add(guild_id, new(guild_id));
-			}
+			try_init_settings(guild_id);
 
 			ulong? ch_bot_old = Program.settings[guild_id].ch_bot;
 			if (ch_bot_old is not null) {
@@ -95,6 +83,37 @@ namespace Polybius.Commands {
 				return false;
 			}
 			return true;
+		}
+
+		// Creates a new default Settings file for the given server if
+		// one doesn't exist already.
+		// Returns true when a new file was created, false otherwise.
+		private static bool try_init_settings(ulong guild_id) {
+			if (Program.settings[guild_id] is null) {
+				Program.settings.Add(guild_id, new (guild_id));
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		private static ulong? extract_channel_id(string text, DiscordMessage msg) {
+			if (msg.MentionedChannels.Count > 0) {
+				return msg.MentionedChannels[0].Id;
+			} else if (Regex.IsMatch(text, @"\d+")) {
+				return Convert.ToUInt64(text);
+			} else {
+				text = text.ToLower();
+				foreach (DiscordChannel channel in get_guild_channels(msg)) {
+					if (channel.Name == text)
+						return channel.Id;
+				}
+			}
+			return null;
+		}
+
+		private static IEnumerable<DiscordChannel> get_guild_channels(DiscordMessage msg) {
+			return msg.Channel.Guild.Channels.Values;
 		}
 	}
 }
