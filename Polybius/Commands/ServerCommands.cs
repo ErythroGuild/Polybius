@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -20,6 +20,10 @@ namespace Polybius.Commands {
 			try_init_settings(guild_id);
 
 			ulong? ch_bot = extract_channel_id(arg, msg);
+			if (ch_bot is null) {
+				_ = msg.RespondAsync(":no_entry: Could not parse channel name.\nNo changes have been made.");
+				return;
+			}
 			ulong? ch_bot_old = Program.settings[guild_id].ch_bot;
 			string mention =
 				msg.Channel.Guild.GetChannel((ulong)ch_bot).Mention;
@@ -34,11 +38,13 @@ namespace Polybius.Commands {
 
 		public static void bot_channel_clear(string arg, DiscordMessage msg) {
 			bool guild_exists = check_guild_exists(msg);
-			if (!guild_exists) { return; }
+			if (!guild_exists)
+				{ return; }
 			ulong guild_id = (ulong)msg.Channel.GuildId;
 			try_init_settings(guild_id);
 
 			ulong? ch_bot_old = Program.settings[guild_id].ch_bot;
+
 			if (ch_bot_old is not null) {
 				Program.settings[guild_id].ch_bot = null;
 				string mention =
