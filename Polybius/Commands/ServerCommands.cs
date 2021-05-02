@@ -30,7 +30,7 @@ namespace Polybius.Commands {
 				string response = $":white_check_mark: {mention} has been added to the whitelist.";
 				if (Program.settings[guild_id].ch_blacklist.Contains((ulong)ch_to_add)) {
 					Program.settings[guild_id].ch_blacklist.Remove((ulong)ch_to_add);
-					response += $":white_check_mark: {mention} has been removed from the blacklist.";
+					response += $"\n:white_check_mark: {mention} has been removed from the blacklist.";
 				}
 				_ = msg.RespondAsync(response);
 			}
@@ -60,7 +60,7 @@ namespace Polybius.Commands {
 				string response = $":white_check_mark: {mention} has been added to the blacklist.";
 				if (Program.settings[guild_id].ch_whitelist.Contains((ulong)ch_to_add)) {
 					Program.settings[guild_id].ch_whitelist.Remove((ulong)ch_to_add);
-					response += $":white_check_mark: {mention} has been removed from the whitelist.";
+					response += $"\n:white_check_mark: {mention} has been removed from the whitelist.";
 				}
 				_ = msg.RespondAsync(response);
 			}
