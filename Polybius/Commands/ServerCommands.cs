@@ -34,6 +34,7 @@ namespace Polybius.Commands {
 				}
 				_ = msg.RespondAsync(response);
 			}
+			Program.settings[guild_id].save();
 		}
 
 		public static void blacklist(string arg, DiscordMessage msg) {
@@ -64,6 +65,7 @@ namespace Polybius.Commands {
 				}
 				_ = msg.RespondAsync(response);
 			}
+			Program.settings[guild_id].save();
 		}
 
 		public static void bot_channel(string arg, DiscordMessage msg) {
