@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -77,7 +77,7 @@ namespace Polybius.Commands {
 
 			ulong? ch_bot = extract_channel_id(arg, msg);
 			if (ch_bot is null) {
-				_ = msg.RespondAsync(":no_entry: Could not parse channel name.\nNo changes have been made.");
+				_ = msg.RespondAsync(":warning: Could not parse channel name.\nNo changes have been made.");
 				return;
 			}
 			ulong? ch_bot_old = Program.settings[guild_id].ch_bot;
