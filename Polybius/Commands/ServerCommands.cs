@@ -196,7 +196,7 @@ namespace Polybius.Commands {
 			try_init_settings(guild_id);
 			Settings settings = Program.settings[guild_id];
 
-			_ = msg.RespondAsync($"Search token format:\n:information_source: `{settings.token_L}`query`{settings.split}`meta`{settings.token_R}`");
+			_ = msg.RespondAsync($":information_source: Search token format:\n`{settings.token_L}`query`{settings.split}`meta`{settings.token_R}`");
 		}
 
 		public static void reset_server_settings(string arg, DiscordMessage msg) {
