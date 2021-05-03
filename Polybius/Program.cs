@@ -17,9 +17,9 @@ namespace Polybius {
 		public record QueryMetaPair(string query, string meta);
 		private record ChannelBotPair(ulong ch, ulong bot);
 
-		private static DiscordClient polybius;
+		internal static DiscordClient polybius;
 
-		private static Dictionary<ulong, Settings> settings = new ();
+		internal static Dictionary<ulong, Settings> settings = new ();
 		private static Dictionary<ChannelBotPair, Queue<DateTime>>
 			bot_queues_short = new (),
 			bot_queues_long = new ();
@@ -37,19 +37,27 @@ namespace Polybius {
 			{ "help", HelpCommand.main },
 			{ "h"   , HelpCommand.main },
 			{ "?"   , HelpCommand.main },
-			{ "blacklist"      , ServerCommands.blacklist     },
-			{ "whitelist"      , ServerCommands.whitelist     },
-			{ "bot-channel"    , ServerCommands.bot_channel   },
-			{ "botspam"        , ServerCommands.bot_channel   },
-			{ "view-filters"   , ServerCommands.view_filters  },
-			{ "view-blacklist" , ServerCommands.view_filters  },
-			{ "view-whitelist" , ServerCommands.view_filters  },
-			{ "set-token-l"    , ServerCommands.set_token_L   },
-			{ "set-token-r"    , ServerCommands.set_token_R   },
-			{ "set-split"      , ServerCommands.set_split     },
-			{ "view-tokens"	   , ServerCommands.view_tokens   },
-			{ "view-token"     , ServerCommands.view_tokens   },
-			{ "stats"          , ServerCommands.stats         },
+			{ "blacklist"        , ServerCommands.blacklist         },
+			{ "whitelist"        , ServerCommands.whitelist         },
+			{ "bot-channel"      , ServerCommands.bot_channel       },
+			{ "bot-channel-set"  , ServerCommands.bot_channel       },
+			{ "set-bot-channel"  , ServerCommands.bot_channel       },
+			{ "clear-bot-channel", ServerCommands.bot_channel_clear },
+			{ "bot-channel-clear", ServerCommands.bot_channel_clear },
+			{ "unset-bot-channel", ServerCommands.bot_channel_clear },
+			{ "bot-channel-unset", ServerCommands.bot_channel_clear },
+			{ "reset-bot-channel", ServerCommands.bot_channel_clear },
+			{ "bot-channel-reset", ServerCommands.bot_channel_clear },
+			{ "view-filters"     , ServerCommands.view_filters      },
+			{ "view-blacklist"   , ServerCommands.view_filters      },
+			{ "view-whitelist"   , ServerCommands.view_filters      },
+			{ "set-token-l"      , ServerCommands.set_token_L       },
+			{ "set-token-r"      , ServerCommands.set_token_R       },
+			{ "set-split"        , ServerCommands.set_split         },
+			{ "view-tokens"	     , ServerCommands.view_tokens       },
+			{ "view-token"       , ServerCommands.view_tokens       },
+			{ "reset-server-settings", ServerCommands.reset_server_settings },
+			{ "stats"            , ServerCommands.stats             },
 			{ "exit"           , AdminCommands.exit           },
 			{ "end"            , AdminCommands.exit           },
 			{ "kill"           , AdminCommands.exit           },
@@ -79,8 +87,8 @@ namespace Polybius {
 			init_bot();
 
 			// Connected to discord servers (but not necessarily guilds yet!).
-			polybius.Ready += async (polybius, e) =>
-				 await Task.Run(() => {
+			polybius.Ready += (polybius, e) =>
+				 _ = Task.Run(() => {
 					DiscordActivity helptext =
 						new ("@Polybius -help", ActivityType.Watching);
 					polybius.UpdateStatusAsync(helptext);
@@ -91,8 +99,8 @@ namespace Polybius {
 				});
 
 			// Guild data has finished downloading.
-			polybius.GuildDownloadCompleted += async (polybius, e) =>
-				await Task.Run(() => {
+			polybius.GuildDownloadCompleted += (polybius, e) =>
+				_ = Task.Run(() => {
 					foreach (ulong id in e.Guilds.Keys) {
 						update_guild_name(e.Guilds[id]);
 
@@ -109,8 +117,8 @@ namespace Polybius {
 				});
 
 			// Was added to a new guild.
-			polybius.GuildCreated += async (polybius, e) =>
-				await Task.Run(() => {
+			polybius.GuildCreated += (polybius, e) =>
+				_ = Task.Run(() => {
 					update_guild_name(e.Guild);
 					Settings settings_guild = new (e.Guild.Id);
 					settings_guild.save();
@@ -118,8 +126,8 @@ namespace Polybius {
 				});
 
 			// Was removed from a guild.
-			polybius.GuildDeleted += async (polybius, e) =>
-				await Task.Run(() => {
+			polybius.GuildDeleted += (polybius, e) =>
+				_ = Task.Run(() => {
 					// Server data: `config/guild-{guild_id}/`
 					// `_server_name.txt`
 					// `settings.txt`
@@ -139,14 +147,14 @@ namespace Polybius {
 				});
 
 			// Any monitored guild has updated their info.
-			polybius.GuildUpdated += async (polybius, e) =>
-				await Task.Run(() => {
+			polybius.GuildUpdated += (polybius, e) =>
+				_ = Task.Run(() => {
 					update_guild_name(e.GuildAfter);
 				});
 
 			// Received a message from any readable channel.
-			polybius.MessageCreated += async (polybius, e) => 
-				await Task.Run(async () => {
+			polybius.MessageCreated += (polybius, e) => 
+				_ = Task.Run(async () => {
 					DiscordMessage msg = e.Message;
 
 					// Never respond to self!
@@ -320,7 +328,9 @@ namespace Polybius {
 				input = input[1..];
 				string[] msg_split = input.Split(' ', 2);
 				string cmd = msg_split[0].ToLower();
-				string arg = msg_split[1];
+				string arg = "";
+				if (msg_split.Length > 1)
+					{ arg = msg_split[1]; }
 
 				if (command_list.ContainsKey(cmd)) {
 					command_list[cmd](arg, msg);
