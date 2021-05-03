@@ -125,7 +125,7 @@ namespace Polybius.Commands {
 			} else {
 				ulong ch_bot = (ulong)settings.ch_bot;
 				string mention = msg.Channel.Guild.GetChannel(ch_bot).Mention;
-				response += $":information_source: The bot channel is {mention}.";
+				response += $":information_source: Bot channel: {mention}.";
 			}
 
 			if (settings.ch_whitelist.Count == 0) {
