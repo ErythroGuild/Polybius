@@ -331,6 +331,7 @@ namespace Polybius {
 				string arg = "";
 				if (msg_split.Length > 1)
 					{ arg = msg_split[1]; }
+				arg = arg.Trim();
 
 				if (command_list.ContainsKey(cmd)) {
 					command_list[cmd](arg, msg);
