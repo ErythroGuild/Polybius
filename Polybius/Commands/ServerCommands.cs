@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -153,12 +153,39 @@ namespace Polybius.Commands {
 		}
 
 		public static void set_token_L(string arg, DiscordMessage msg) {
+			bool guild_exists = check_guild_exists(msg);
+			if (!guild_exists)
+				{ return; }
+			ulong guild_id = (ulong)msg.Channel.GuildId;
+			try_init_settings(guild_id);
+
+			string token_old = Program.settings[guild_id].token_L;
+			Program.settings[guild_id].token_L = arg;
+			_ = msg.RespondAsync($":white_check_mark: Left-hand token changed from `{token_old}` to `{arg}`.");
 		}
 
 		public static void set_token_R(string arg, DiscordMessage msg) {
+			bool guild_exists = check_guild_exists(msg);
+			if (!guild_exists)
+				{ return; }
+			ulong guild_id = (ulong)msg.Channel.GuildId;
+			try_init_settings(guild_id);
+
+			string token_old = Program.settings[guild_id].token_R;
+			Program.settings[guild_id].token_R = arg;
+			_ = msg.RespondAsync($":white_check_mark: Right-hand token changed from `{token_old}` to `{arg}`.");
 		}
 
 		public static void set_split(string arg, DiscordMessage msg) {
+			bool guild_exists = check_guild_exists(msg);
+			if (!guild_exists)
+				{ return; }
+			ulong guild_id = (ulong)msg.Channel.GuildId;
+			try_init_settings(guild_id);
+
+			string token_old = Program.settings[guild_id].split;
+			Program.settings[guild_id].split = arg;
+			_ = msg.RespondAsync($":white_check_mark: Splitter token changed from `{token_old}` to `{arg}`.");
 		}
 
 		public static void view_tokens(string arg, DiscordMessage msg) {
