@@ -159,6 +159,11 @@ namespace Polybius.Commands {
 			ulong guild_id = (ulong)msg.Channel.GuildId;
 			try_init_settings(guild_id);
 
+			if (arg == "") {
+				_ = msg.RespondAsync(":warning: Tokens cannot be set to empty strings.\nNo settings have been changed.");
+				return;
+			}
+
 			string token_old = Program.settings[guild_id].token_L;
 			Program.settings[guild_id].token_L = arg;
 			_ = msg.RespondAsync($":white_check_mark: Left-hand token changed from `{token_old}` to `{arg}`.");
@@ -171,6 +176,11 @@ namespace Polybius.Commands {
 			ulong guild_id = (ulong)msg.Channel.GuildId;
 			try_init_settings(guild_id);
 
+			if (arg == "") {
+				_ = msg.RespondAsync(":warning: Tokens cannot be set to empty strings.\nNo settings have been changed.");
+				return;
+			}
+
 			string token_old = Program.settings[guild_id].token_R;
 			Program.settings[guild_id].token_R = arg;
 			_ = msg.RespondAsync($":white_check_mark: Right-hand token changed from `{token_old}` to `{arg}`.");
@@ -182,6 +192,11 @@ namespace Polybius.Commands {
 				{ return; }
 			ulong guild_id = (ulong)msg.Channel.GuildId;
 			try_init_settings(guild_id);
+
+			if (arg == "") {
+				_ = msg.RespondAsync(":warning: Tokens cannot be set to empty strings.\nNo settings have been changed.");
+				return;
+			}
 
 			string token_old = Program.settings[guild_id].split;
 			Program.settings[guild_id].split = arg;
