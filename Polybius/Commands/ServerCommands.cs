@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -162,6 +162,14 @@ namespace Polybius.Commands {
 		}
 
 		public static void view_tokens(string arg, DiscordMessage msg) {
+			bool guild_exists = check_guild_exists(msg);
+			if (!guild_exists)
+				{ return; }
+			ulong guild_id = (ulong)msg.Channel.GuildId;
+			try_init_settings(guild_id);
+			Settings settings = Program.settings[guild_id];
+
+			_ = msg.RespondAsync($"Search token format:\n:information_source: `{settings.token_L}`query`{settings.split}`meta`{settings.token_R}`");
 		}
 
 		public static void reset_server_settings(string arg, DiscordMessage msg) {
