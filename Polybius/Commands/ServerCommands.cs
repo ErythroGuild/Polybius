@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -112,6 +112,44 @@ namespace Polybius.Commands {
 		}
 
 		public static void view_filters(string arg, DiscordMessage msg) {
+			bool guild_exists = check_guild_exists(msg);
+			if (!guild_exists)
+				{ return; }
+			ulong guild_id = (ulong)msg.Channel.GuildId;
+			try_init_settings(guild_id);
+			Settings settings = Program.settings[guild_id];
+
+			string response = "";
+			if (settings.ch_bot is null) {
+				response += ":information_source: No bot channel has been set.";
+			} else {
+				ulong ch_bot = (ulong)settings.ch_bot;
+				string mention = msg.Channel.Guild.GetChannel(ch_bot).Mention;
+				response += $":information_source: The bot channel is {mention}.";
+			}
+
+			if (settings.ch_whitelist.Count == 0) {
+				response += "\n:information_source: No channels have been whitelisted.";
+			} else {
+				response += "\n:information_source: Whitelist:";
+				foreach (ulong ch in settings.ch_whitelist) {
+					string mention = msg.Channel.Guild.GetChannel(ch).Mention;
+					response += $" {mention},";
+				}
+				response = response[..^1];
+			}
+
+			if (settings.ch_blacklist.Count == 0) {
+				response += "\n:information_source: No channels have been blacklisted.";
+			} else {
+				response += "\n:information_source: Blacklist:";
+				foreach (ulong ch in settings.ch_blacklist) {
+					string mention = msg.Channel.Guild.GetChannel(ch).Mention;
+					response += $" {mention},";
+				}
+				response = response[..^1];
+			}
+			_ = msg.RespondAsync(response);
 		}
 
 		public static void set_token_L(string arg, DiscordMessage msg) {
