@@ -168,6 +168,26 @@ namespace Polybius.Engines {
 					}
 				}
 				break;
+			case Type.BattlePet:
+				Regex regex_battlepet = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_battlepet = regex_battlepet.Match(entry).Groups;
+					string name = match_battlepet["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_battlepet["id"].Value;
+						string url = $@"https://www.wowhead.com/npc={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
 			}
 
 			return results;
