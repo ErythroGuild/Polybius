@@ -124,6 +124,28 @@ namespace Polybius.Engines {
 					}
 				}
 				break;
+			case Type.Essence:
+				Regex regex_essence = new (
+					@"""id"":(?<id>\d+).*""rank"":(?<rank>\d).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_essence = regex_essence.Match(entry).Groups;
+					string name = match_essence["name"].Value;
+					string rank = match_essence["rank"].Value;
+					// only allow rank 3
+					if ((name.ToLower() == token.query.ToLower()) && (rank == "3")) {
+						string id = match_essence["id"].Value;
+						string url = $@"https://www.wowhead.com/azerite-essence-power/{id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
 			}
 
 			return results;
