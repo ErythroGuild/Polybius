@@ -308,6 +308,27 @@ namespace Polybius.Engines {
 					}
 				}
 				break;
+			case Type.Title:
+				Regex regex_title = new(
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_title = regex_title.Match(entry).Groups;
+					string name = match_title["name"].Value;
+					name = name.Replace("%s", "").Trim(new char[] {',', ' ' });
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_title["id"].Value;
+						string url = $@"https://www.wowhead.com/title={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
 			}
 
 			return results;
