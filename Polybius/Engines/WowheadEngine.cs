@@ -107,12 +107,14 @@ namespace Polybius.Engines {
 			case Type.Conduit:
 			case Type.SoulbindTalent:
 			case Type.AnimaPower:
-				Regex regex_spell = new (@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""", RegexOptions.Compiled);
+				Regex regex_spell = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
 				foreach (string entry in entries) {
-					Match match_spell = regex_spell.Match(entry);
-					string name = match_spell.Groups["name"].Value;
+					GroupCollection match_spell = regex_spell.Match(entry).Groups;
+					string name = match_spell["name"].Value;
 					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_spell.Groups["id"].Value;
+						string id = match_spell["id"].Value;
 						string url = $@"https://www.wowhead.com/spell={id}";
 						results.Add(new WowheadSearchResult() {
 							is_exact_match = true,
