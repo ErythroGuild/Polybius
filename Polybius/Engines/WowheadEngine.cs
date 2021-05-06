@@ -146,6 +146,26 @@ namespace Polybius.Engines {
 					}
 				}
 				break;
+			case Type.Affix:
+				Regex regex_affix = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_affix = regex_affix.Match(entry).Groups;
+					string name = match_affix["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_affix["id"].Value;
+						string url = $@"https://www.wowhead.com/affix={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
 			}
 
 			return results;
