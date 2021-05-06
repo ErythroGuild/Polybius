@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -101,6 +101,12 @@ namespace Polybius.Engines {
 			switch (type) {
 			case Type.Spell:
 			case Type.CovenantSpell:
+			case Type.Talent:
+			case Type.PvpTalent:
+			case Type.Memory:
+			case Type.Conduit:
+			case Type.SoulbindTalent:
+			case Type.AnimaPower:
 				Regex regex_spell = new (@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""", RegexOptions.Compiled);
 				foreach (string entry in entries) {
 					Match match_spell = regex_spell.Match(entry);
