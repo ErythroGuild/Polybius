@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -114,6 +114,42 @@ namespace Polybius.Engines {
 			return results;
 		}
 
+		// Returns the tooltip data that is processed into HTML.
+		// This is javascript, so it contains backslash escapes.
+		private static string get_tooltip(HtmlNode doc) {
+			string data = get_tooltip_raw(doc);
+
+			// Only one entry should have tooltip data associated
+			// (the one corresponding to the current page).
+			Regex regex_tooltip = new (
+				@"tooltip_enus = ""(?<tooltip>.+?)"";",
+				RegexOptions.Compiled);
+			return regex_tooltip.Match(data).Groups["tooltip"].Value;
+		}
+
+		// Returns the game icon to the left of the tooltip.
+		private static string get_icon(HtmlNode doc, string id) {
+			string data = get_tooltip_raw(doc);
+
+			Regex regex = new (
+				$@"""{id}"".*?""icon"":""(?<url>.+?)""",
+				RegexOptions.Compiled);
+			string name = regex.Match(data).Groups["url"].Value;
+
+			return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+		}
+
+		// Returns the inner text of the entire <script> tag enclosing
+		// the tooltip data itself.
+		private static string get_tooltip_raw(HtmlNode doc) {
+			string xpath_data =
+				@"//div[@id='main-contents']" +
+				@"/div[@class='text']" +
+				@"/script";
+			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
+			return node_data.InnerText;
+		}
+
 		public class WowheadSearchResult : SearchResult {
 			public enum Type {
 				Spell, CovenantSpell,
@@ -139,8 +175,8 @@ namespace Polybius.Engines {
 					.WithTitle(name)
 					.WithColor(Program.color_embed)
 					.WithFooter("powered by Wowhead", @"https://wow.zamimg.com/images/logos/favicon-standard.png");
-				string url_thumbnail;
 
+				string url_icon, tooltip;
 				switch (type) {
 				case Type.Spell:
 					HtmlDocument doc_html = http.Load(data);
@@ -148,23 +184,12 @@ namespace Polybius.Engines {
 
 					string id = Regex.Match(data, @"spell=(?<id>\d+)", RegexOptions.Compiled).Groups["id"].Value;
 
-					string xpath_tooltip =
-						@"//div[@id='main-contents']" +
-						@"/div[@class='text']" +
-						@"/script";
-					HtmlNode node_tooltip = doc.SelectSingleNode(xpath_tooltip);
-					string tooltip_raw = node_tooltip.InnerText;
-
-					Regex regex_thumb_url = new ($@"""{id}"".*?""icon"":""(?<url>.+?)""", RegexOptions.Compiled);
-					string thumb_url = regex_thumb_url.Match(tooltip_raw).Groups["url"].Value;
-					url_thumbnail = $@"https://wow.zamimg.com/images/wow/icons/large/{thumb_url}.jpg";
-
-					Regex regex_tooltip = new Regex(@"tooltip_enus = ""(?<tooltip>.+?)"";", RegexOptions.Compiled);
-					string tooltip_str = regex_tooltip.Match(tooltip_raw).Groups["tooltip"].Value;
+					url_icon = get_icon(doc, id);
+					tooltip = get_tooltip(doc);
 
 					Regex regex_tooltip_text = new Regex(@"<div class=\\""q\d?\\"">(?<text>.*)<\\\/div>", RegexOptions.Compiled);
 					string tooltip_text = "";
-					MatchCollection tooltip_parts = regex_tooltip_text.Matches(tooltip_str);
+					MatchCollection tooltip_parts = regex_tooltip_text.Matches(tooltip);
 					foreach (Match match in tooltip_parts) {
 						tooltip_text += match.Groups["text"].Value;
 						tooltip_text += "\n";
@@ -175,7 +200,7 @@ namespace Polybius.Engines {
 
 					embed = new DiscordEmbedBuilder(embed)
 						.WithUrl(data)
-						.WithThumbnail(url_thumbnail)
+						.WithThumbnail(url_icon)
 						.WithDescription(tooltip_text);
 					break;
 				}
