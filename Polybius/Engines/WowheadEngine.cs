@@ -188,6 +188,26 @@ namespace Polybius.Engines {
 					}
 				}
 				break;
+			case Type.BattlePetSpell:
+				Regex regex_battlepetspell =  new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_battlepetspell = regex_battlepetspell.Match(entry).Groups;
+					string name = match_battlepetspell["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_battlepetspell["id"].Value;
+						string url = $@"https://www.wowhead.com/pet-ability={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
 			}
 
 			return results;
