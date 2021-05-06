@@ -107,6 +107,8 @@ namespace Polybius.Engines {
 			case Type.Conduit:
 			case Type.SoulbindTalent:
 			case Type.AnimaPower:
+			case Type.Mount:
+			case Type.Profession:
 				Regex regex_spell = new (
 					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
 					RegexOptions.Compiled);
