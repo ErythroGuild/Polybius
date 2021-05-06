@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -101,13 +101,226 @@ namespace Polybius.Engines {
 			switch (type) {
 			case Type.Spell:
 			case Type.CovenantSpell:
-				Regex regex_spell = new (@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""", RegexOptions.Compiled);
+			case Type.Talent:
+			case Type.PvpTalent:
+			case Type.Memory:
+			case Type.Conduit:
+			case Type.SoulbindTalent:
+			case Type.AnimaPower:
+			case Type.Mount:
+			case Type.Profession:
+				Regex regex_spell = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
 				foreach (string entry in entries) {
-					Match match_spell = regex_spell.Match(entry);
-					string name = match_spell.Groups["name"].Value;
+					GroupCollection match_spell = regex_spell.Match(entry).Groups;
+					string name = match_spell["name"].Value;
 					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_spell.Groups["id"].Value;
+						string id = match_spell["id"].Value;
 						string url = $@"https://www.wowhead.com/spell={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.Essence:
+				Regex regex_essence = new (
+					@"""id"":(?<id>\d+).*""rank"":(?<rank>\d).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_essence = regex_essence.Match(entry).Groups;
+					string name = match_essence["name"].Value;
+					string rank = match_essence["rank"].Value;
+					// only allow rank 3
+					if ((name.ToLower() == token.query.ToLower()) && (rank == "3")) {
+						string id = match_essence["id"].Value;
+						string url = $@"https://www.wowhead.com/azerite-essence-power/{id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.Affix:
+				Regex regex_affix = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_affix = regex_affix.Match(entry).Groups;
+					string name = match_affix["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_affix["id"].Value;
+						string url = $@"https://www.wowhead.com/affix={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.BattlePet:
+				Regex regex_battlepet = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_battlepet = regex_battlepet.Match(entry).Groups;
+					string name = match_battlepet["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_battlepet["id"].Value;
+						string url = $@"https://www.wowhead.com/npc={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.BattlePetSpell:
+				Regex regex_battlepetspell =  new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_battlepetspell = regex_battlepetspell.Match(entry).Groups;
+					string name = match_battlepetspell["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_battlepetspell["id"].Value;
+						string url = $@"https://www.wowhead.com/pet-ability={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.Item:
+				Regex regex_item = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_item = regex_item.Match(entry).Groups;
+					string name = match_item["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_item["id"].Value;
+						string url = $@"https://www.wowhead.com/item={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.Achievement:
+				Regex regex_achievement = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_achievement = regex_achievement.Match(entry).Groups;
+					string name = match_achievement["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_achievement["id"].Value;
+						string url = $@"https://www.wowhead.com/achievement={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.Quest:
+				Regex regex_quest = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_quest = regex_quest.Match(entry).Groups;
+					string name = match_quest["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_quest["id"].Value;
+						string url = $@"https://www.wowhead.com/quest={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.Currency:
+				Regex regex_currency = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_currency = regex_currency.Match(entry).Groups;
+					string name = match_currency["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_currency["id"].Value;
+						string url = $@"https://www.wowhead.com/currency={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.Faction:
+				Regex regex_faction = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_faction = regex_faction.Match(entry).Groups;
+					string name = match_faction["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_faction["id"].Value;
+						string url = $@"https://www.wowhead.com/faction={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
+			case Type.Title:
+				Regex regex_title = new(
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_title = regex_title.Match(entry).Groups;
+					string name = match_title["name"].Value;
+					name = name.Replace("%s", "").Trim(new char[] {',', ' ' });
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_title["id"].Value;
+						string url = $@"https://www.wowhead.com/title={id}";
 						results.Add(new WowheadSearchResult() {
 							is_exact_match = true,
 							similarity = 1.0F,
