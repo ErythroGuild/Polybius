@@ -159,15 +159,20 @@ namespace Polybius.Engines {
 		private static string parse_pageinfo(HtmlNode doc) {
 			string xpath_data =
 				@"//div[@id='infobox-original-position']" +
-				@"/following-sibling::script[3]";
-			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
-			string data = node_data.InnerText;
+				@"/following-sibling::script";
+			HtmlNodeCollection nodes_data = doc.SelectNodes(xpath_data);
 
-			Regex regex_pageinfo = new (
+			Regex regex_pageinfo = new(
 				@"g_pageInfo = {(?<data>.+)};",
 				RegexOptions.Compiled);
+			foreach (HtmlNode node in nodes_data) {
+				string data = node.InnerText;
+				if (regex_pageinfo.IsMatch(data)) {
+					return regex_pageinfo.Match(data).Groups["data"].Value;
+				}
+			}
 
-			return regex_pageinfo.Match(data).Groups["data"].Value;
+			return null;
 		}
 
 		// Use the `g_pageInfo.type` value and pattern matching of the
