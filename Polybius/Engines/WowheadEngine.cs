@@ -208,6 +208,26 @@ namespace Polybius.Engines {
 					}
 				}
 				break;
+			case Type.Item:
+				Regex regex_item = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_item = regex_item.Match(entry).Groups;
+					string name = match_item["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_item["id"].Value;
+						string url = $@"https://www.wowhead.com/item={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
 			}
 
 			return results;
