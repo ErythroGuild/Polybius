@@ -288,6 +288,26 @@ namespace Polybius.Engines {
 					}
 				}
 				break;
+			case Type.Faction:
+				Regex regex_faction = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_faction = regex_faction.Match(entry).Groups;
+					string name = match_faction["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_faction["id"].Value;
+						string url = $@"https://www.wowhead.com/faction={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
 			}
 
 			return results;
