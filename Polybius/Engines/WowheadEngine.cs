@@ -228,6 +228,26 @@ namespace Polybius.Engines {
 					}
 				}
 				break;
+			case Type.Achievement:
+				Regex regex_achievement = new (
+					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
+					RegexOptions.Compiled);
+				foreach (string entry in entries) {
+					GroupCollection match_achievement = regex_achievement.Match(entry).Groups;
+					string name = match_achievement["name"].Value;
+					if (name.ToLower() == token.query.ToLower()) {
+						string id = match_achievement["id"].Value;
+						string url = $@"https://www.wowhead.com/achievement={id}";
+						results.Add(new WowheadSearchResult() {
+							is_exact_match = true,
+							similarity = 1.0F,
+							name = name,
+							data = url,
+							type = type
+						});
+					}
+				}
+				break;
 			}
 
 			return results;
