@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -26,311 +26,40 @@ namespace Polybius.Engines {
 				return result_from_redirect(doc, url);
 			}
 
+			// Extract the <script> node containing the search data.
 			string xpath_data =
 				@"//div[@id='search-listview']" +
 				@"/following-sibling::script";
 			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
 			string data = node_data.InnerText;
 
+			// Extract all the tabs and parse through their entries,
+			// collating the results into a list.
+			List<string> tabs = parse_tab_strings(data);
 			List<SearchResult> results = new ();
-
-			Regex regex_tabs = new (
-				@"new Listview\((?<tab>.*)\);",
-				RegexOptions.Compiled );
-			MatchCollection matches_tabs = regex_tabs.Matches(data);
-
-			List<string> tabs = new ();
-			foreach (Match match_tab in matches_tabs) {
-				string tab = match_tab.Groups["tab"].Value;
-
-				Regex regex_id_entries = new (
-					@"id: '(?<id>.+?)'.+data: \[(?<entries>.+)\]",
+			foreach (string tab in tabs) {
+				// Identify the type of results contained by the tab.
+				// Discard the data if the results aren't supported.
+				Regex regex_tab_id = new (
+					@"id: '(.+?)'",
 					RegexOptions.Compiled);
-				Match match_id_entries = regex_id_entries.Match(tab);
-				string id = match_id_entries.Groups["id"].Value;
-				string entries = match_id_entries.Groups["entries"].Value;
+				string tab_id = regex_tab_id.Match(tab).Groups[1].Value;
 
-				Dictionary<string, Type> id_to_type = new () {
-					{ "abilities"         , Type.Spell         },
-					{ "specializations"   , Type.Spell         },
-					{ "covenant-abilities", Type.CovenantSpell },
-					
-					{ "talents"    , Type.Talent    },
-					{ "pvp-talents", Type.PvpTalent },
-
-					{ "runecarving-powers", Type.Memory         },
-					{ "soulbind-conduits" , Type.Conduit        },
-					{ "soulbind-abilities", Type.SoulbindTalent },
-					{ "anima-powers"      , Type.AnimaPower     },
-					{ "azerite-essence"   , Type.Essence        },
-
-					{ "affixes", Type.Affix },
-					{ "mounts" , Type.Mount },
-
-					{ "battle-pets"         , Type.BattlePet      },
-					{ "battle-pet-abilities", Type.BattlePetSpell },
-
-					{ "items"       , Type.Item        },
-					{ "achievements", Type.Achievement },
-					{ "quests"      , Type.Quest       },
-					{ "currencies"  , Type.Currency    },
-					{ "factions"    , Type.Faction     },
-					{ "titles"      , Type.Title       },
-					{ "professions" , Type.Profession  },
-				};
-
-				if (!id_to_type.ContainsKey(id)) {
+				Type? type = get_tab_type(tab_id);
+				if (type is null) {
 					continue;
 				}
-				Type type = id_to_type[id];
-				Regex regex_entries = new (@"{(?<entry>.+?)},?", RegexOptions.Compiled);
-				MatchCollection matches_entries = regex_entries.Matches(entries);
-				List<string> entries_str = new ();
-				foreach (Match match_entry in matches_entries) {
-					entries_str.Add(match_entry.Groups["entry"].Value);
-				}
-				results.AddRange(get_results(type, entries_str, token));
-			}
 
-			return results;
-		}
+				// Extract individual entries from the tab's data, parse
+				// through, and add to the total list of entries.
+				Regex regex_tab_data = new (
+					@"data: \[(.+)\]",
+					RegexOptions.Compiled);
+				string tab_data = regex_tab_data.Match(tab).Groups[1].Value;
 
-		private static List<SearchResult> get_results(Type type, List<string> entries, Program.QueryMetaPair token) {
-			List<SearchResult> results = new ();
-
-			switch (type) {
-			case Type.Spell:
-			case Type.CovenantSpell:
-			case Type.Talent:
-			case Type.PvpTalent:
-			case Type.Memory:
-			case Type.Conduit:
-			case Type.SoulbindTalent:
-			case Type.AnimaPower:
-			case Type.Mount:
-			case Type.Profession:
-				Regex regex_spell = new (
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_spell = regex_spell.Match(entry).Groups;
-					string name = match_spell["name"].Value;
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_spell["id"].Value;
-						string url = $@"https://www.wowhead.com/spell={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.Essence:
-				Regex regex_essence = new (
-					@"""id"":(?<id>\d+).*""rank"":(?<rank>\d).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_essence = regex_essence.Match(entry).Groups;
-					string name = match_essence["name"].Value;
-					string rank = match_essence["rank"].Value;
-					// only allow rank 3
-					if ((name.ToLower() == token.query.ToLower()) && (rank == "3")) {
-						string id = match_essence["id"].Value;
-						string url = $@"https://www.wowhead.com/azerite-essence-power/{id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.Affix:
-				Regex regex_affix = new (
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_affix = regex_affix.Match(entry).Groups;
-					string name = match_affix["name"].Value;
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_affix["id"].Value;
-						string url = $@"https://www.wowhead.com/affix={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.BattlePet:
-				Regex regex_battlepet = new (
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_battlepet = regex_battlepet.Match(entry).Groups;
-					string name = match_battlepet["name"].Value;
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_battlepet["id"].Value;
-						string url = $@"https://www.wowhead.com/npc={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.BattlePetSpell:
-				Regex regex_battlepetspell =  new (
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_battlepetspell = regex_battlepetspell.Match(entry).Groups;
-					string name = match_battlepetspell["name"].Value;
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_battlepetspell["id"].Value;
-						string url = $@"https://www.wowhead.com/pet-ability={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.Item:
-				Regex regex_item = new (
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_item = regex_item.Match(entry).Groups;
-					string name = match_item["name"].Value;
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_item["id"].Value;
-						string url = $@"https://www.wowhead.com/item={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.Achievement:
-				Regex regex_achievement = new (
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_achievement = regex_achievement.Match(entry).Groups;
-					string name = match_achievement["name"].Value;
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_achievement["id"].Value;
-						string url = $@"https://www.wowhead.com/achievement={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.Quest:
-				Regex regex_quest = new (
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_quest = regex_quest.Match(entry).Groups;
-					string name = match_quest["name"].Value;
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_quest["id"].Value;
-						string url = $@"https://www.wowhead.com/quest={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.Currency:
-				Regex regex_currency = new (
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_currency = regex_currency.Match(entry).Groups;
-					string name = match_currency["name"].Value;
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_currency["id"].Value;
-						string url = $@"https://www.wowhead.com/currency={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.Faction:
-				Regex regex_faction = new (
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_faction = regex_faction.Match(entry).Groups;
-					string name = match_faction["name"].Value;
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_faction["id"].Value;
-						string url = $@"https://www.wowhead.com/faction={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
-			case Type.Title:
-				Regex regex_title = new(
-					@"""id"":(?<id>\d+).*""name"":""(?<name>.+?)""",
-					RegexOptions.Compiled);
-				foreach (string entry in entries) {
-					GroupCollection match_title = regex_title.Match(entry).Groups;
-					string name = match_title["name"].Value;
-					name = name.Replace("%s", "").Trim(new char[] {',', ' ' });
-					if (name.ToLower() == token.query.ToLower()) {
-						string id = match_title["id"].Value;
-						string url = $@"https://www.wowhead.com/title={id}";
-						results.Add(new WowheadSearchResult() {
-							is_exact_match = true,
-							similarity = 1.0F,
-							name = name,
-							data = url,
-							type = type
-						});
-					}
-				}
-				break;
+				List<string> entries = parse_tab_entries(tab_data);
+				List<SearchResult> tab_results = parse_results((Type)type, entries, token);
+				results.AddRange(tab_results);
 			}
 
 			return results;
@@ -375,6 +104,8 @@ namespace Polybius.Engines {
 				@"/following-sibling::script";
 			HtmlNodeCollection nodes_data = doc.SelectNodes(xpath_data);
 
+			// Go through all <script> nodes until we find one that sets
+			// the `g_pageInfo` variable.
 			Regex regex_pageinfo = new(
 				@"g_pageInfo = {(?<data>.+)};",
 				RegexOptions.Compiled);
@@ -509,6 +240,156 @@ namespace Polybius.Engines {
 				@"/script";
 			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
 			return node_data.InnerText;
+		}
+
+		// Parse <script> data into a list of search result tabs
+		// (still formatted as javascript).
+		private static List<string> parse_tab_strings(string data) {
+			List<string> tabs = new ();
+			Regex regex_tabs = new (@"new Listview\((.*)\);", RegexOptions.Compiled);
+			MatchCollection matches = regex_tabs.Matches(data);
+			foreach (Match match in matches) {
+				// Regex captures are found in a 1-based array,
+				// [0] contains the match itself.
+				tabs.Add(match.Groups[1].Value);
+			}
+			return tabs;
+		}
+
+		// Classify the `Type` of the tab from the tab-id.
+		// Returns `null` if the tab type isn't supported.
+		private static Type? get_tab_type(string tab_id) {
+			Dictionary<string, Type> dict = new () {
+				{ "abilities", Type.Spell },
+				{ "specializations", Type.Spell },
+				{ "covenant-abilities", Type.CovenantSpell },
+
+				{ "talents", Type.Talent },
+				{ "pvp-talents", Type.PvpTalent },
+
+				{ "runecarving-powers", Type.Memory },
+				{ "soulbind-conduits", Type.Conduit },
+				{ "soulbind-abilities", Type.SoulbindTalent },
+				{ "anima-powers", Type.AnimaPower },
+				{ "azerite-essence", Type.Essence },
+
+				{ "affixes", Type.Affix },
+				{ "mounts", Type.Mount },
+
+				{ "battle-pets", Type.BattlePet },
+				{ "battle-pet-abilities", Type.BattlePetSpell },
+
+				{ "items", Type.Item },
+				{ "achievements", Type.Achievement },
+				{ "quests", Type.Quest },
+				{ "currencies", Type.Currency },
+				{ "factions", Type.Faction },
+				{ "titles", Type.Title },
+				{ "professions", Type.Profession },
+			};
+
+			if (!dict.ContainsKey(tab_id)) {
+				return null;
+			} else {
+				return dict[tab_id];
+			}
+		}
+
+		// Parses the list of entries in a tab into individual entries.
+		private static List<string> parse_tab_entries(string data) {
+			// Split multiple elements onto different lines.
+			data = data.Replace("},{", "}\n{");
+			string[] data_split = data.Split('\n');
+
+			// For each element, remove the opening and closing braces.
+			for (int i=0; i<data_split.Length; ++i) {
+				data_split[i] = data_split[i][1..^1];
+			}
+			return new List<string>(data_split);
+		}
+
+		// Takes an entire tab worth of results (and the category of the tab),
+		// and returns a parsed list of (`Wowhead`)`SearchResult`s.
+		private static List<SearchResult> parse_results(Type type, List<string> tab, Program.QueryMetaPair token) {
+			List<SearchResult> entries = new ();
+			// Capture groups are accessed from a 1-based list,
+			// [0] contains the match string itself.
+			Regex regex_name = new (@"""name"":""(.+?)""", RegexOptions.Compiled);
+			Regex regex_id = new (@"""id"":(\d+)", RegexOptions.Compiled);
+			Regex regex_rank = new (@"""rank"":(\d)", RegexOptions.Compiled);
+
+			foreach (string entry in tab) {
+				string name = regex_name.Match(entry).Groups[1].Value;
+
+				// Titles get special handling to trim the added "<Name>".
+				if (type == Type.Title) {
+					name = name.Replace("%s", "");
+					char[] title_trim = { ' ', ',' };
+					name = name.Trim(title_trim);
+				}
+
+				// Only return rank 3 of azerite essences.
+				if (type == Type.Essence) {
+					string rank = regex_rank.Match(entry).Groups[1].Value;
+					if (rank != "3") {
+						continue;
+					}
+				}
+
+				// Collate matches into a list.
+				if (name.ToLower() == token.query.ToLower()) {
+					string id = regex_id.Match(entry).Groups[1].Value;
+					string url = create_entry_url(type, id);
+					entries.Add(new WowheadSearchResult() {
+						is_exact_match = true,
+						similarity = 1.0F,
+						name = name,
+						data = url,
+						type = type
+					});
+				}
+			}
+			return entries;
+		}
+
+		// Create the link to the actual Wowhead entry page, from
+		// entries parsed from the result list.
+		private static string create_entry_url(Type type, string id) {
+			switch (type) {
+			case Type.Spell:
+			case Type.CovenantSpell:
+			case Type.Talent:
+			case Type.PvpTalent:
+			case Type.Memory:
+			case Type.Conduit:
+			case Type.SoulbindTalent:
+			case Type.AnimaPower:
+			case Type.Mount:
+			case Type.Profession:
+				return $@"https://www.wowhead.com/spell={id}";
+			case Type.Essence:
+				return $@"https://www.wowhead.com/azerite-essence-power/{id}";
+			case Type.Affix:
+				return $@"https://www.wowhead.com/affix={id}";
+			case Type.BattlePet:
+				return $@"https://www.wowhead.com/npc={id}";
+			case Type.BattlePetSpell:
+				return $@"https://www.wowhead.com/pet-ability={id}";
+			case Type.Item:
+				return $@"https://www.wowhead.com/item={id}";
+			case Type.Achievement:
+				return $@"https://www.wowhead.com/achievement={id}";
+			case Type.Quest:
+				return $@"https://www.wowhead.com/quest={id}";
+			case Type.Currency:
+				return $@"https://www.wowhead.com/currency={id}";
+			case Type.Faction:
+				return $@"https://www.wowhead.com/faction={id}";
+			case Type.Title:
+				return $@"https://www.wowhead.com/title={id}";
+			default:
+				return null;
+			}
 		}
 
 		public class WowheadSearchResult : SearchResult {
