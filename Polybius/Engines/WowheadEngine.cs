@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -12,6 +12,7 @@ namespace Polybius.Engines {
 		private static HtmlWeb http = new ();
 
 		private const string url_search = @"https://www.wowhead.com/search?q=";
+		private const int embed_color = 0x9A61F1;
 
 		public static List<SearchResult> search(Program.QueryMetaPair token) {
 			HtmlDocument doc_html = http.Load(url_search + token.query);
@@ -414,8 +415,9 @@ namespace Polybius.Engines {
 
 			public override DiscordMessageBuilder get_display() {
 				DiscordEmbed embed = new DiscordEmbedBuilder()
+					.WithColor(embed_color)
 					.WithTitle(name)
-					.WithColor(Program.color_embed)
+					.WithUrl(data)
 					.WithFooter("powered by Wowhead", @"https://wow.zamimg.com/images/logos/favicon-standard.png");
 
 				string url_icon, tooltip;
@@ -441,7 +443,6 @@ namespace Polybius.Engines {
 					tooltip_text += $"\n*Read more: [Wowhead comments]({data}#comments)*";
 
 					embed = new DiscordEmbedBuilder(embed)
-						.WithUrl(data)
 						.WithThumbnail(url_icon)
 						.WithDescription(tooltip_text);
 					break;
