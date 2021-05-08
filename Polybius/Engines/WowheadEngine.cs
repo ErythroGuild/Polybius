@@ -26,70 +26,40 @@ namespace Polybius.Engines {
 				return result_from_redirect(doc, url);
 			}
 
+			// Extract the <script> node containing the search data.
 			string xpath_data =
 				@"//div[@id='search-listview']" +
 				@"/following-sibling::script";
 			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
 			string data = node_data.InnerText;
 
+			// Extract all the tabs and parse through their entries,
+			// collating the results into a list.
+			List<string> tabs = parse_tab_strings(data);
 			List<SearchResult> results = new ();
-
-			Regex regex_tabs = new (
-				@"new Listview\((?<tab>.*)\);",
-				RegexOptions.Compiled );
-			MatchCollection matches_tabs = regex_tabs.Matches(data);
-
-			List<string> tabs = new ();
-			foreach (Match match_tab in matches_tabs) {
-				string tab = match_tab.Groups["tab"].Value;
-
-				Regex regex_id_entries = new (
-					@"id: '(?<id>.+?)'.+data: \[(?<entries>.+)\]",
+			foreach (string tab in tabs) {
+				// Identify the type of results contained by the tab.
+				// Discard the data if the results aren't supported.
+				Regex regex_tab_id = new (
+					@"id: '(.+?)'",
 					RegexOptions.Compiled);
-				Match match_id_entries = regex_id_entries.Match(tab);
-				string id = match_id_entries.Groups["id"].Value;
-				string entries = match_id_entries.Groups["entries"].Value;
+				string tab_id = regex_tab_id.Match(tab).Groups[1].Value;
 
-				Dictionary<string, Type> id_to_type = new () {
-					{ "abilities"         , Type.Spell         },
-					{ "specializations"   , Type.Spell         },
-					{ "covenant-abilities", Type.CovenantSpell },
-					
-					{ "talents"    , Type.Talent    },
-					{ "pvp-talents", Type.PvpTalent },
-
-					{ "runecarving-powers", Type.Memory         },
-					{ "soulbind-conduits" , Type.Conduit        },
-					{ "soulbind-abilities", Type.SoulbindTalent },
-					{ "anima-powers"      , Type.AnimaPower     },
-					{ "azerite-essence"   , Type.Essence        },
-
-					{ "affixes", Type.Affix },
-					{ "mounts" , Type.Mount },
-
-					{ "battle-pets"         , Type.BattlePet      },
-					{ "battle-pet-abilities", Type.BattlePetSpell },
-
-					{ "items"       , Type.Item        },
-					{ "achievements", Type.Achievement },
-					{ "quests"      , Type.Quest       },
-					{ "currencies"  , Type.Currency    },
-					{ "factions"    , Type.Faction     },
-					{ "titles"      , Type.Title       },
-					{ "professions" , Type.Profession  },
-				};
-
-				if (!id_to_type.ContainsKey(id)) {
+				Type? type = get_tab_type(tab_id);
+				if (type is null) {
 					continue;
 				}
-				Type type = id_to_type[id];
-				Regex regex_entries = new (@"{(?<entry>.+?)},?", RegexOptions.Compiled);
-				MatchCollection matches_entries = regex_entries.Matches(entries);
-				List<string> entries_str = new ();
-				foreach (Match match_entry in matches_entries) {
-					entries_str.Add(match_entry.Groups["entry"].Value);
-				}
-				results.AddRange(parse_results(type, entries_str, token));
+
+				// Extract individual entries from the tab's data, parse
+				// through, and add to the total list of entries.
+				Regex regex_tab_data = new (
+					@"data: \[(.+)\]",
+					RegexOptions.Compiled);
+				string tab_data = regex_tab_data.Match(tab).Groups[1].Value;
+
+				List<string> entries = parse_tab_entries(tab_data);
+				List<SearchResult> tab_results = parse_results((Type)type, entries, token);
+				results.AddRange(tab_results);
 			}
 
 			return results;
@@ -270,6 +240,72 @@ namespace Polybius.Engines {
 				@"/script";
 			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
 			return node_data.InnerText;
+		}
+
+		// Parse <script> data into a list of search result tabs
+		// (still formatted as javascript).
+		private static List<string> parse_tab_strings(string data) {
+			List<string> tabs = new ();
+			Regex regex_tabs = new (@"new Listview\((.*)\);", RegexOptions.Compiled);
+			MatchCollection matches = regex_tabs.Matches(data);
+			foreach (Match match in matches) {
+				// Regex captures are found in a 1-based array,
+				// [0] contains the match itself.
+				tabs.Add(match.Groups[1].Value);
+			}
+			return tabs;
+		}
+
+		// Classify the `Type` of the tab from the tab-id.
+		// Returns `null` if the tab type isn't supported.
+		private static Type? get_tab_type(string tab_id) {
+			Dictionary<string, Type> dict = new () {
+				{ "abilities", Type.Spell },
+				{ "specializations", Type.Spell },
+				{ "covenant-abilities", Type.CovenantSpell },
+
+				{ "talents", Type.Talent },
+				{ "pvp-talents", Type.PvpTalent },
+
+				{ "runecarving-powers", Type.Memory },
+				{ "soulbind-conduits", Type.Conduit },
+				{ "soulbind-abilities", Type.SoulbindTalent },
+				{ "anima-powers", Type.AnimaPower },
+				{ "azerite-essence", Type.Essence },
+
+				{ "affixes", Type.Affix },
+				{ "mounts", Type.Mount },
+
+				{ "battle-pets", Type.BattlePet },
+				{ "battle-pet-abilities", Type.BattlePetSpell },
+
+				{ "items", Type.Item },
+				{ "achievements", Type.Achievement },
+				{ "quests", Type.Quest },
+				{ "currencies", Type.Currency },
+				{ "factions", Type.Faction },
+				{ "titles", Type.Title },
+				{ "professions", Type.Profession },
+			};
+
+			if (!dict.ContainsKey(tab_id)) {
+				return null;
+			} else {
+				return dict[tab_id];
+			}
+		}
+
+		// Parses the list of entries in a tab into individual entries.
+		private static List<string> parse_tab_entries(string data) {
+			// Split multiple elements onto different lines.
+			data = data.Replace("},{", "}\n{");
+			string[] data_split = data.Split('\n');
+
+			// For each element, remove the opening and closing braces.
+			for (int i=0; i<data_split.Length; ++i) {
+				data_split[i] = data_split[i][1..^1];
+			}
+			return new List<string>(data_split);
 		}
 
 		// Takes an entire tab worth of results (and the category of the tab),
