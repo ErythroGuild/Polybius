@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -433,35 +433,42 @@ namespace Polybius.Engines {
 					.WithUrl(data)
 					.WithFooter("powered by Wowhead", @"https://wow.zamimg.com/images/logos/favicon-standard.png");
 
-				string url_icon, tooltip;
+				HtmlDocument doc_html = http.Load(data);
+				HtmlNode doc = doc_html.DocumentNode;
+				StringWriter writer = new();
+				string url_icon, tooltip_raw, tooltip = "";
+
 				switch (type) {
 				case Type.Spell:
-					HtmlDocument doc_html = http.Load(data);
-					HtmlNode doc = doc_html.DocumentNode;
-
-					string id = Regex.Match(data, @"spell=(?<id>\d+)", RegexOptions.Compiled).Groups["id"].Value;
-
 					url_icon = get_icon(doc, id);
-					tooltip = get_tooltip(doc);
+					tooltip_raw = get_tooltip(doc);
 
 					Regex regex_tooltip_text = new Regex(@"<div class=\\""q\d?\\"">(?<text>.*)<\\\/div>", RegexOptions.Compiled);
-					string tooltip_text = "";
-					MatchCollection tooltip_parts = regex_tooltip_text.Matches(tooltip);
+					MatchCollection tooltip_parts = regex_tooltip_text.Matches(tooltip_raw);
 					foreach (Match match in tooltip_parts) {
-						tooltip_text += match.Groups["text"].Value;
-						tooltip_text += "\n";
+						writer.WriteLine(match.Groups["text"].Value);
 					}
-					tooltip_text = tooltip_text.Replace(@"<br \/>", "\n");
-					tooltip_text = Regex.Replace(tooltip_text, @"<(?:\\\/)?span(?:.*?)>", "", RegexOptions.Compiled);
-					tooltip_text += $"\n*Read more: [Wowhead comments]({data}#comments)*";
-
+					writer.Flush();
+					tooltip = sanitize_tooltip(writer.ToString());
+					writer = new StringWriter(new StringBuilder(tooltip));
+					writer.WriteLine();
+					writer.WriteLine($"*Read more: [Wowhead comments]({data}#comments)*");
+					
+					tooltip = writer.ToString();
 					embed = new DiscordEmbedBuilder(embed)
-						.WithThumbnail(url_icon)
-						.WithDescription(tooltip_text);
+						.WithThumbnail(url_icon);
 					break;
 				}
 
+				embed = new DiscordEmbedBuilder(embed)
+					.WithDescription(tooltip);
 				return new DiscordMessageBuilder().WithEmbed(embed);
+			}
+
+			private static string sanitize_tooltip(string tooltip) {
+				tooltip = tooltip.Replace(@"<br \/>", "\n");
+				tooltip = Regex.Replace(tooltip, @"<(?:\\\/)?span(?:.*?)>", "", RegexOptions.Compiled);
+				return tooltip;
 			}
 		}
 	}
