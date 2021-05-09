@@ -357,7 +357,8 @@ namespace Polybius.Engines {
 						similarity = 1.0F,
 						name = name,
 						data = url,
-						type = type
+						type = type,
+						id = id
 					});
 				}
 			}
@@ -423,6 +424,7 @@ namespace Polybius.Engines {
 			};
 
 			public Type type;
+			public string id;
 
 			public override DiscordMessageBuilder get_display() {
 				DiscordEmbed embed = new DiscordEmbedBuilder()
