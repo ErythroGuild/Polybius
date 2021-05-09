@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 
 using DSharpPlus.Entities;
@@ -210,14 +212,23 @@ namespace Polybius.Engines {
 		// Returns the tooltip data that is processed into HTML.
 		// This is javascript, so it contains backslash escapes.
 		private static string get_tooltip(HtmlNode doc) {
-			string data = get_tooltip_raw(doc);
+			StringReader data = new (get_tooltip_raw(doc));
+			Regex regex_tooltip = new (
+				@"g_spells\[\d+\]\.tooltip_enus = ""(.+)"";",
+				RegexOptions.Compiled);
 
 			// Only one entry should have tooltip data associated
 			// (the one corresponding to the current page).
-			Regex regex_tooltip = new (
-				@"tooltip_enus = ""(?<tooltip>.+?)"";",
-				RegexOptions.Compiled);
-			return regex_tooltip.Match(data).Groups["tooltip"].Value;
+			while (data.Peek() != -1) {
+				string line = data.ReadLine();
+				Match match = regex_tooltip.Match(line);
+				if (match != Match.Empty) {
+					return match.Groups[1].Value;
+				}
+			}
+
+			// If no tooltip was found, return null.
+			return null;
 		}
 
 		// Returns the game icon to the left of the tooltip.
