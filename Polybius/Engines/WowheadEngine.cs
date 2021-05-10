@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 using DSharpPlus.Entities;
 using HtmlAgilityPack;
@@ -17,8 +17,8 @@ namespace Polybius.Engines {
 		private const int embed_color = 0x9A61F1;
 
 		public static List<SearchResult> search(Program.QueryMetaPair token) {
-			HtmlDocument doc_html = http.Load(url_search + token.query);
-			HtmlNode doc = doc_html.DocumentNode;
+			HtmlDocument doc = http.Load(url_search + token.query);
+			HtmlNode page = doc.DocumentNode;
 
 			// If we were immediately redirected to a non-search page,
 			// this means Wowhead found a sole, exact match.
@@ -26,14 +26,14 @@ namespace Polybius.Engines {
 			string url = http.ResponseUri.ToString();
 			string url_search_frag = @"wowhead.com/search?q=";
 			if (!url.Contains(url_search_frag)) {
-				return result_from_redirect(doc, url);
+				return result_from_redirect(page, url);
 			}
 
 			// Extract the <script> node containing the search data.
 			string xpath_data =
 				@"//div[@id='search-listview']" +
 				@"/following-sibling::script";
-			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
+			HtmlNode node_data = page.SelectSingleNode(xpath_data);
 			string data = node_data.InnerText;
 
 			// Extract all the tabs and parse through their entries,
@@ -101,11 +101,11 @@ namespace Polybius.Engines {
 
 		// Extract the `var g_pageInfo` variable from the <script> CDATA
 		// embedded within the HTML document.
-		private static string parse_pageinfo(HtmlNode doc) {
+		private static string parse_pageinfo(HtmlNode page) {
 			string xpath_data =
 				@"//div[@id='infobox-original-position']" +
 				@"/following-sibling::script";
-			HtmlNodeCollection nodes_data = doc.SelectNodes(xpath_data);
+			HtmlNodeCollection nodes_data = page.SelectNodes(xpath_data);
 
 			// Go through all <script> nodes until we find one that sets
 			// the `g_pageInfo` variable.
@@ -125,7 +125,7 @@ namespace Polybius.Engines {
 		// Use the `g_pageInfo.type` value and pattern matching of the
 		// page itself to infer the `WowheadSearchResult.Type` of the page.
 		// Returns `null` if the inferred type isn't a supported type.
-		private static Type? parse_type(int type_int, HtmlNode doc) {
+		private static Type? parse_type(int type_int, HtmlNode page) {
 			// From basic.js, `WH.Types` definition.
 			Dictionary<int, Type> dict = new() {
 				{ 6, Type.Spell },
@@ -196,7 +196,7 @@ namespace Polybius.Engines {
 
 			// Further disambiguate the types of results based on the HTML
 			// document itself.
-			string tooltip = get_tooltip(doc);
+			string tooltip = get_tooltip(page);
 			switch (type) {
 			case Type.Spell:
 				if (tooltip.Contains("Covenant Ability")) {
@@ -211,8 +211,8 @@ namespace Polybius.Engines {
 
 		// Returns the tooltip data that is processed into HTML.
 		// This is javascript, so it contains backslash escapes.
-		private static string get_tooltip(HtmlNode doc) {
-			StringReader data = new (get_tooltip_raw(doc));
+		private static string get_tooltip(HtmlNode page) {
+			StringReader data = new (get_tooltip_raw(page));
 			Regex regex_tooltip = new (
 				@"g_spells\[\d+\]\.tooltip_enus = ""(.+)"";",
 				RegexOptions.Compiled);
@@ -230,28 +230,24 @@ namespace Polybius.Engines {
 			// If no tooltip was found, return null.
 			return null;
 		}
-
-		// Returns the game icon to the left of the tooltip.
-		private static string get_icon(HtmlNode doc, string id) {
-			string data = get_tooltip_raw(doc);
-
-			Regex regex = new (
-				$@"""{id}"".*?""icon"":""(?<url>.+?)""",
-				RegexOptions.Compiled);
-			string name = regex.Match(data).Groups["url"].Value;
-
-			return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
-		}
-
+		
 		// Returns the inner text of the entire <script> tag enclosing
 		// the tooltip data itself.
-		private static string get_tooltip_raw(HtmlNode doc) {
+		private static string get_tooltip_raw(HtmlNode page) {
 			string xpath_data =
 				@"//div[@id='main-contents']" +
 				@"/div[@class='text']" +
 				@"/script";
-			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
+			HtmlNode node_data = page.SelectSingleNode(xpath_data);
 			return node_data.InnerText;
+		}
+
+		// Replace escaped quotes and backslashes with their actual
+		// representations.
+		private static string javascript_to_html(string input) {
+			input = input.Replace(@"\""", "\"");
+			input = input.Replace(@"\/", "/");
+			return input;
 		}
 
 		// Parse <script> data into a list of search result tabs
@@ -405,6 +401,8 @@ namespace Polybius.Engines {
 			}
 		}
 
+
+
 		public class WowheadSearchResult : SearchResult {
 			public enum Type {
 				Spell, CovenantSpell,
@@ -433,41 +431,73 @@ namespace Polybius.Engines {
 					.WithUrl(data)
 					.WithFooter("powered by Wowhead", @"https://wow.zamimg.com/images/logos/favicon-standard.png");
 
+				// Load data url into a document for later reuse.
 				HtmlDocument doc_html = http.Load(data);
-				HtmlNode doc = doc_html.DocumentNode;
-				StringWriter writer = new();
-				string url_icon, tooltip_raw, tooltip = "";
+				HtmlNode page = doc_html.DocumentNode;
 
-				switch (type) {
-				case Type.Spell:
-					url_icon = get_icon(doc, id);
-					tooltip_raw = get_tooltip(doc);
-
-					Regex regex_tooltip_text = new Regex(@"<div class=\\""q\d?\\"">(?<text>.*)<\\\/div>", RegexOptions.Compiled);
-					MatchCollection tooltip_parts = regex_tooltip_text.Matches(tooltip_raw);
-					foreach (Match match in tooltip_parts) {
-						writer.WriteLine(match.Groups["text"].Value);
-					}
-					writer.Flush();
-					tooltip = sanitize_tooltip(writer.ToString());
-					writer = new StringWriter(new StringBuilder(tooltip));
-					writer.WriteLine();
-					writer.WriteLine($"*Read more: [Wowhead comments]({data}#comments)*");
-					
-					tooltip = writer.ToString();
+				// Parse the icon and add it to the embed if it exists.
+				string url_icon = get_icon(page);
+				if (url_icon is not null) {
 					embed = new DiscordEmbedBuilder(embed)
 						.WithThumbnail(url_icon);
-					break;
 				}
+
+				StringWriter writer = new ();
+				Dictionary<Type, Func<HtmlNode, string>> tooltips = new () {
+					{ Type.Spell, text_spell },
+					{ Type.CovenantSpell, text_spell },
+					{ Type.Talent, text_spell },
+				};
+
+				string tooltip = tooltips[type](page);
+				writer.WriteLine(tooltip);
+				writer.WriteLine();
+				writer.WriteLine($"*Read more: [Comments]({data}#comments)*");
+				writer.Flush();
+				string description = writer.ToString();
 
 				embed = new DiscordEmbedBuilder(embed)
 					.WithDescription(tooltip);
 				return new DiscordMessageBuilder().WithEmbed(embed);
 			}
 
-			private static string sanitize_tooltip(string tooltip) {
-				tooltip = tooltip.Replace(@"<br \/>", "\n");
-				tooltip = Regex.Replace(tooltip, @"<(?:\\\/)?span(?:.*?)>", "", RegexOptions.Compiled);
+			// Returns the thumbnail icon if one exists, or null otherwise.
+			private string get_icon(HtmlNode page) {
+				string data = get_tooltip_raw(page);
+
+				switch (type) {
+				case Type.Spell:
+				case Type.CovenantSpell:
+				case Type.Talent:
+					Regex regex = new(
+						$@"""{id}"".*?""icon"":""(?<url>.+?)""",
+						RegexOptions.Compiled);
+					string name = regex.Match(data).Groups["url"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				default:
+					return null;
+				}
+			}
+
+			private string text_spell(HtmlNode page) {
+				string tooltip = get_tooltip(page);
+				tooltip = javascript_to_html(tooltip);
+
+				HtmlDocument dom = new ();
+				dom.LoadHtml(tooltip);
+
+				// Find the main text node, and replace <br> tags with newlines.
+				// Otherwise `HtmlNode.InnerText` omits newlines.
+				string xpath_text = @"//div[@class='q']";
+				HtmlNode node_text = dom.DocumentNode.SelectSingleNode(xpath_text);
+				foreach (HtmlNode node in node_text.SelectNodes(@"//br")) {
+					node.ParentNode.ReplaceChild(dom.CreateTextNode("\n"), node);
+				}
+				tooltip = node_text.InnerText;
+				
+				// Remove excess newlines (no more than 2 consecutive).
+				tooltip = Regex.Replace(tooltip, @"(?:\n){3,}", "\n\n");
 				return tooltip;
 			}
 		}
