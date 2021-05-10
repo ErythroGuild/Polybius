@@ -13,7 +13,7 @@ namespace Polybius.Engines {
 		private static HtmlWeb http = new ();
 
 		private const string url_search = @"https://www.wowhead.com/search?q=";
-		private const int embed_color = 0x9A61F1;
+		private const int embed_color = 0xA71A19;
 
 		public static List<SearchResult> search(Program.QueryMetaPair token) {
 			HtmlDocument doc = http.Load(url_search + token.query);
