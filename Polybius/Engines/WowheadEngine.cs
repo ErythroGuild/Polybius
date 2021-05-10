@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 using DSharpPlus.Entities;
 using HtmlAgilityPack;
@@ -74,10 +73,11 @@ namespace Polybius.Engines {
 			// Find and parse the `g_pageInfo` string.
 			string pageinfo = parse_pageinfo(doc);
 			Regex regex = new(
-				@"""type"":(?<type>\d+),""typeId"":\d+,""name"":""(?<name>.+)""",
+				@"""type"":(?<type>\d+),""typeId"":(?<typeid>\d+),""name"":""(?<name>.+)""",
 				RegexOptions.Compiled);
 			GroupCollection match = regex.Match(pageinfo).Groups;
 			int type_int = Convert.ToInt32(match["type"].Value);
+			string id = match["typeid"].Value;
 			string name = match["name"].Value;
 
 			// Do not return any results if the result type isn't one
@@ -95,6 +95,7 @@ namespace Polybius.Engines {
 				name = name,
 				data = url,
 				type = (Type)type,
+				id = id
 			};
 			return new List<SearchResult>() { result };
 		}
