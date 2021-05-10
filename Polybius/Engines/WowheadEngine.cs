@@ -455,7 +455,7 @@ namespace Polybius.Engines {
 				string tooltip = tooltips[type](page);
 				writer.WriteLine(tooltip);
 				writer.WriteLine();
-				writer.WriteLine($"*More info: [comments]({data}#comments)*");
+				writer.WriteLine($"*More info: [Wowhead]({data}) \u2022 [comments]({data}#comments)*");
 				writer.Flush();
 				string description = writer.ToString();
 
