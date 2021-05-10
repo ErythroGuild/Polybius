@@ -492,12 +492,16 @@ namespace Polybius.Engines {
 				HtmlDocument dom = new ();
 				dom.LoadHtml(tooltip);
 
-				// Find the main text node, and replace <br> tags with newlines.
-				// Otherwise `HtmlNode.InnerText` omits newlines.
-				string xpath_text = @"//div[@class='q']";
+				// Find the main text node, and explicitly add newlines.
+				string xpath_text = @"/table[2]/tr/td";
 				HtmlNode node_text = dom.DocumentNode.SelectSingleNode(xpath_text);
+				// Replace <br> tags with newlines.
 				foreach (HtmlNode node in node_text.SelectNodes(@"//br")) {
 					node.ParentNode.ReplaceChild(dom.CreateTextNode("\n"), node);
+				}
+				// Add newlines between top-level <div>s.
+				foreach (HtmlNode node in node_text.SelectNodes(@"//div/following-sibling::div")) {
+					node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
 				}
 				tooltip = node_text.InnerText;
 				
