@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -444,9 +444,10 @@ namespace Polybius.Engines {
 
 				StringWriter writer = new ();
 				Dictionary<Type, Func<HtmlNode, string>> tooltips = new () {
-					{ Type.Spell, text_spell },
+					{ Type.Spell        , text_spell },
 					{ Type.CovenantSpell, text_spell },
-					{ Type.Talent, text_spell },
+					{ Type.Talent       , text_spell },
+					{ Type.PvpTalent    , text_spell },
 				};
 
 				string tooltip = tooltips[type](page);
@@ -469,6 +470,7 @@ namespace Polybius.Engines {
 				case Type.Spell:
 				case Type.CovenantSpell:
 				case Type.Talent:
+				case Type.PvpTalent:
 					Regex regex = new(
 						$@"""{id}"".*?""icon"":""(?<url>.+?)""",
 						RegexOptions.Compiled);
