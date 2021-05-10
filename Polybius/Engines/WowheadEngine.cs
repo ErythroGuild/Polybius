@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -450,15 +450,17 @@ namespace Polybius.Engines {
 					{ Type.PvpTalent    , text_spell },
 				};
 
+				// Fetch tooltip text from function delegates.
 				string tooltip = tooltips[type](page);
 				writer.WriteLine(tooltip);
 				writer.WriteLine();
-				writer.WriteLine($"*Read more: [Comments]({data}#comments)*");
+				writer.WriteLine($"*More info: [comments]({data}#comments)*");
 				writer.Flush();
 				string description = writer.ToString();
 
+				// Construct embed and pass it to caller.
 				embed = new DiscordEmbedBuilder(embed)
-					.WithDescription(tooltip);
+					.WithDescription(description);
 				return new DiscordMessageBuilder().WithEmbed(embed);
 			}
 
