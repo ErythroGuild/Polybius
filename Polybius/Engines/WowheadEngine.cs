@@ -495,13 +495,21 @@ namespace Polybius.Engines {
 				// Find the main text node, and explicitly add newlines.
 				string xpath_text = @"/table[2]/tr/td";
 				HtmlNode node_text = dom.DocumentNode.SelectSingleNode(xpath_text);
+				HtmlNodeCollection nodes = null;
+
 				// Replace <br> tags with newlines.
-				foreach (HtmlNode node in node_text.SelectNodes(@"//br")) {
-					node.ParentNode.ReplaceChild(dom.CreateTextNode("\n"), node);
+				nodes = node_text.SelectNodes(@"//br");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.ReplaceChild(dom.CreateTextNode("\n"), node);
+					}
 				}
 				// Add newlines between top-level <div>s.
-				foreach (HtmlNode node in node_text.SelectNodes(@"//div/following-sibling::div")) {
-					node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
+				nodes = node_text.SelectNodes(@"//div/following-sibling::div");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
+					}
 				}
 				tooltip = node_text.InnerText;
 				
