@@ -268,32 +268,32 @@ namespace Polybius.Engines {
 		// Returns `null` if the tab type isn't supported.
 		private static Type? get_tab_type(string tab_id) {
 			Dictionary<string, Type> dict = new () {
-				{ "abilities", Type.Spell },
-				{ "specializations", Type.Spell },
+				{ "abilities"         , Type.Spell         },
+				{ "specializations"   , Type.Spell         },
 				{ "covenant-abilities", Type.CovenantSpell },
 
-				{ "talents", Type.Talent },
+				{ "talents"    , Type.Talent    },
 				{ "pvp-talents", Type.PvpTalent },
 
-				{ "runecarving-powers", Type.Memory },
-				{ "soulbind-conduits", Type.Conduit },
+				{ "runecarving-powers", Type.Memory         },
+				{ "soulbind-conduits" , Type.Conduit        },
 				{ "soulbind-abilities", Type.SoulbindTalent },
-				{ "anima-powers", Type.AnimaPower },
-				{ "azerite-essence", Type.Essence },
+				{ "anima-powers"      , Type.AnimaPower     },
+				{ "azerite-essence"   , Type.Essence        },
 
 				{ "affixes", Type.Affix },
-				{ "mounts", Type.Mount },
+				{ "mounts" , Type.Mount },
 
-				{ "battle-pets", Type.BattlePet },
+				{ "battle-pets"         , Type.BattlePet      },
 				{ "battle-pet-abilities", Type.BattlePetSpell },
 
-				{ "items", Type.Item },
+				{ "items"       , Type.Item        },
 				{ "achievements", Type.Achievement },
-				{ "quests", Type.Quest },
-				{ "currencies", Type.Currency },
-				{ "factions", Type.Faction },
-				{ "titles", Type.Title },
-				{ "professions", Type.Profession },
+				{ "quests"      , Type.Quest       },
+				{ "currencies"  , Type.Currency    },
+				{ "factions"    , Type.Faction     },
+				{ "titles"      , Type.Title       },
+				{ "professions" , Type.Profession  },
 			};
 
 			if (!dict.ContainsKey(tab_id)) {
