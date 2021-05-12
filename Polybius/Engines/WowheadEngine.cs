@@ -441,8 +441,8 @@ namespace Polybius.Engines {
 					.WithFooter("powered by Wowhead", @"https://wow.zamimg.com/images/logos/favicon-standard.png");
 
 				// Load data url into a document for later reuse.
-				HtmlDocument doc_html = http.Load(data);
-				HtmlNode page = doc_html.DocumentNode;
+				HtmlDocument doc = http.Load(data);
+				HtmlNode page = doc.DocumentNode;
 
 				// Parse the icon and add it to the embed if it exists.
 				string url_icon = get_icon(page);
@@ -457,6 +457,11 @@ namespace Polybius.Engines {
 					{ Type.CovenantSpell, text_spell },
 					{ Type.Talent       , text_spell },
 					{ Type.PvpTalent    , text_spell },
+
+					{ Type.Memory        , text_spell },
+					{ Type.Conduit       , text_spell },
+					{ Type.SoulbindTalent, text_spell },
+					{ Type.AnimaPower    , text_spell },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -475,17 +480,22 @@ namespace Polybius.Engines {
 
 			// Returns the thumbnail icon if one exists, or null otherwise.
 			private string get_icon(HtmlNode page) {
-				string data = get_tooltip_raw(page);
-
+				string data, name;
 				switch (type) {
 				case Type.Spell:
 				case Type.CovenantSpell:
 				case Type.Talent:
 				case Type.PvpTalent:
-					Regex regex = new(
-						$@"""{id}"".*?""icon"":""(?<url>.+?)""",
+				case Type.Memory:
+				case Type.Conduit:
+				case Type.SoulbindTalent:
+				case Type.AnimaPower:
+					data = get_tooltip_raw(page);
+
+					Regex regex_spell = new (
+						$@"""{id}"".*?""icon"":""(?<name>.+?)""",
 						RegexOptions.Compiled);
-					string name = regex.Match(data).Groups["url"].Value;
+					name = regex_spell.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				default:
