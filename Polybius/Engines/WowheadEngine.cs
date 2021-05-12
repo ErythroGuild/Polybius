@@ -396,6 +396,20 @@ namespace Polybius.Engines {
 			}
 		}
 
+		// Return the name of the spell (as shown in the header) at
+		// the provided link.
+		private static string get_spell_name(string url) {
+			HtmlDocument doc = http.Load(url);
+			HtmlNode page = doc.DocumentNode;
+
+			string xpath_title =
+				@"//div[@id='main-contents']" +
+				@"/div[@class='text']" +
+				@"/h1";
+			HtmlNode node_title = page.SelectSingleNode(xpath_title);
+
+			return node_title.InnerText;
+		}
 
 
 		public class WowheadSearchResult : SearchResult {
