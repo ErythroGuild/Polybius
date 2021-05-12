@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -465,6 +465,8 @@ namespace Polybius.Engines {
 					{ Type.AnimaPower    , text_spell },
 
 					{ Type.Essence, text_essence },
+
+					{ Type.Affix, text_affix },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -502,6 +504,7 @@ namespace Polybius.Engines {
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				case Type.Essence:
+				case Type.Affix:
 					string xpath =
 						@"//div[@id='h1titleicon']" +
 						@"/following-sibling::script";
@@ -509,7 +512,7 @@ namespace Polybius.Engines {
 					data = node_data.InnerText;
 
 					Regex regex_essence = new (
-						@"Icon\.create\(""(?<name>[\w]+)""",
+						@"Icon\.create\(['""](?<name>[\w]+)['""]",
 						RegexOptions.Compiled);
 					name = regex_essence.Match(data).Groups["name"].Value;
 
@@ -614,6 +617,13 @@ namespace Polybius.Engines {
 
 				writer.Flush();
 				return writer.ToString().TrimEnd();
+			}
+
+			private string text_affix(HtmlNode page) {
+				string xpath_data = @"//div[@id='article-all']";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
+				node_data = node_data.PreviousSibling;
+				return node_data.InnerText;
 			}
 		}
 	}
