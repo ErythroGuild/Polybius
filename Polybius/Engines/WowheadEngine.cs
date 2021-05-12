@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 
 using DSharpPlus.Entities;
@@ -12,10 +13,11 @@ namespace Polybius.Engines {
 		private static HtmlWeb http = new ();
 
 		private const string url_search = @"https://www.wowhead.com/search?q=";
+		private const int embed_color = 0xA71A19;
 
 		public static List<SearchResult> search(Program.QueryMetaPair token) {
-			HtmlDocument doc_html = http.Load(url_search + token.query);
-			HtmlNode doc = doc_html.DocumentNode;
+			HtmlDocument doc = http.Load(url_search + token.query);
+			HtmlNode page = doc.DocumentNode;
 
 			// If we were immediately redirected to a non-search page,
 			// this means Wowhead found a sole, exact match.
@@ -23,14 +25,17 @@ namespace Polybius.Engines {
 			string url = http.ResponseUri.ToString();
 			string url_search_frag = @"wowhead.com/search?q=";
 			if (!url.Contains(url_search_frag)) {
-				return result_from_redirect(doc, url);
+				return result_from_redirect(page, url);
 			}
 
 			// Extract the <script> node containing the search data.
 			string xpath_data =
 				@"//div[@id='search-listview']" +
 				@"/following-sibling::script";
-			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
+			HtmlNode node_data = page.SelectSingleNode(xpath_data);
+			if (node_data is null) {
+				return new List<SearchResult>();
+			}
 			string data = node_data.InnerText;
 
 			// Extract all the tabs and parse through their entries,
@@ -71,10 +76,11 @@ namespace Polybius.Engines {
 			// Find and parse the `g_pageInfo` string.
 			string pageinfo = parse_pageinfo(doc);
 			Regex regex = new(
-				@"""type"":(?<type>\d+),""typeId"":\d+,""name"":""(?<name>.+)""",
+				@"""type"":(?<type>\d+),""typeId"":(?<typeid>\d+),""name"":""(?<name>.+)""",
 				RegexOptions.Compiled);
 			GroupCollection match = regex.Match(pageinfo).Groups;
 			int type_int = Convert.ToInt32(match["type"].Value);
+			string id = match["typeid"].Value;
 			string name = match["name"].Value;
 
 			// Do not return any results if the result type isn't one
@@ -92,17 +98,18 @@ namespace Polybius.Engines {
 				name = name,
 				data = url,
 				type = (Type)type,
+				id = id
 			};
 			return new List<SearchResult>() { result };
 		}
 
 		// Extract the `var g_pageInfo` variable from the <script> CDATA
 		// embedded within the HTML document.
-		private static string parse_pageinfo(HtmlNode doc) {
+		private static string parse_pageinfo(HtmlNode page) {
 			string xpath_data =
 				@"//div[@id='infobox-original-position']" +
 				@"/following-sibling::script";
-			HtmlNodeCollection nodes_data = doc.SelectNodes(xpath_data);
+			HtmlNodeCollection nodes_data = page.SelectNodes(xpath_data);
 
 			// Go through all <script> nodes until we find one that sets
 			// the `g_pageInfo` variable.
@@ -122,10 +129,11 @@ namespace Polybius.Engines {
 		// Use the `g_pageInfo.type` value and pattern matching of the
 		// page itself to infer the `WowheadSearchResult.Type` of the page.
 		// Returns `null` if the inferred type isn't a supported type.
-		private static Type? parse_type(int type_int, HtmlNode doc) {
+		private static Type? parse_type(int type_int, HtmlNode page) {
 			// From basic.js, `WH.Types` definition.
 			Dictionary<int, Type> dict = new() {
 				{ 6, Type.Spell },
+				{ 43, Type.Essence },
 				//this.NPC = 1;
 				//this.OBJECT = 2;
 				//this.ITEM = 3;
@@ -193,7 +201,7 @@ namespace Polybius.Engines {
 
 			// Further disambiguate the types of results based on the HTML
 			// document itself.
-			string tooltip = get_tooltip(doc);
+			string tooltip = get_tooltip(page);
 			switch (type) {
 			case Type.Spell:
 				if (tooltip.Contains("Covenant Ability")) {
@@ -208,38 +216,43 @@ namespace Polybius.Engines {
 
 		// Returns the tooltip data that is processed into HTML.
 		// This is javascript, so it contains backslash escapes.
-		private static string get_tooltip(HtmlNode doc) {
-			string data = get_tooltip_raw(doc);
+		private static string get_tooltip(HtmlNode page) {
+			StringReader data = new (get_tooltip_raw(page));
+			Regex regex_tooltip = new (
+				@"g_spells\[\d+\]\.tooltip_enus = ""(.+)"";",
+				RegexOptions.Compiled);
 
 			// Only one entry should have tooltip data associated
 			// (the one corresponding to the current page).
-			Regex regex_tooltip = new (
-				@"tooltip_enus = ""(?<tooltip>.+?)"";",
-				RegexOptions.Compiled);
-			return regex_tooltip.Match(data).Groups["tooltip"].Value;
+			while (data.Peek() != -1) {
+				string line = data.ReadLine();
+				Match match = regex_tooltip.Match(line);
+				if (match != Match.Empty) {
+					return match.Groups[1].Value;
+				}
+			}
+
+			// If no tooltip was found, return null.
+			return null;
 		}
-
-		// Returns the game icon to the left of the tooltip.
-		private static string get_icon(HtmlNode doc, string id) {
-			string data = get_tooltip_raw(doc);
-
-			Regex regex = new (
-				$@"""{id}"".*?""icon"":""(?<url>.+?)""",
-				RegexOptions.Compiled);
-			string name = regex.Match(data).Groups["url"].Value;
-
-			return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
-		}
-
+		
 		// Returns the inner text of the entire <script> tag enclosing
 		// the tooltip data itself.
-		private static string get_tooltip_raw(HtmlNode doc) {
+		private static string get_tooltip_raw(HtmlNode page) {
 			string xpath_data =
 				@"//div[@id='main-contents']" +
 				@"/div[@class='text']" +
 				@"/script";
-			HtmlNode node_data = doc.SelectSingleNode(xpath_data);
+			HtmlNode node_data = page.SelectSingleNode(xpath_data);
 			return node_data.InnerText;
+		}
+
+		// Replace escaped quotes and backslashes with their actual
+		// representations.
+		private static string javascript_to_html(string input) {
+			input = input.Replace(@"\""", "\"");
+			input = input.Replace(@"\/", "/");
+			return input;
 		}
 
 		// Parse <script> data into a list of search result tabs
@@ -260,32 +273,32 @@ namespace Polybius.Engines {
 		// Returns `null` if the tab type isn't supported.
 		private static Type? get_tab_type(string tab_id) {
 			Dictionary<string, Type> dict = new () {
-				{ "abilities", Type.Spell },
-				{ "specializations", Type.Spell },
+				{ "abilities"         , Type.Spell         },
+				{ "specializations"   , Type.Spell         },
 				{ "covenant-abilities", Type.CovenantSpell },
 
-				{ "talents", Type.Talent },
+				{ "talents"    , Type.Talent    },
 				{ "pvp-talents", Type.PvpTalent },
 
-				{ "runecarving-powers", Type.Memory },
-				{ "soulbind-conduits", Type.Conduit },
+				{ "runecarving-powers", Type.Memory         },
+				{ "soulbind-conduits" , Type.Conduit        },
 				{ "soulbind-abilities", Type.SoulbindTalent },
-				{ "anima-powers", Type.AnimaPower },
-				{ "azerite-essence", Type.Essence },
+				{ "anima-powers"      , Type.AnimaPower     },
+				{ "azerite-essence"   , Type.Essence        },
 
 				{ "affixes", Type.Affix },
-				{ "mounts", Type.Mount },
+				{ "mounts" , Type.Mount },
 
-				{ "battle-pets", Type.BattlePet },
+				{ "battle-pets"         , Type.BattlePet      },
 				{ "battle-pet-abilities", Type.BattlePetSpell },
 
-				{ "items", Type.Item },
+				{ "items"       , Type.Item        },
 				{ "achievements", Type.Achievement },
-				{ "quests", Type.Quest },
-				{ "currencies", Type.Currency },
-				{ "factions", Type.Faction },
-				{ "titles", Type.Title },
-				{ "professions", Type.Profession },
+				{ "quests"      , Type.Quest       },
+				{ "currencies"  , Type.Currency    },
+				{ "factions"    , Type.Faction     },
+				{ "titles"      , Type.Title       },
+				{ "professions" , Type.Profession  },
 			};
 
 			if (!dict.ContainsKey(tab_id)) {
@@ -316,7 +329,6 @@ namespace Polybius.Engines {
 			// [0] contains the match string itself.
 			Regex regex_name = new (@"""name"":""(.+?)""", RegexOptions.Compiled);
 			Regex regex_id = new (@"""id"":(\d+)", RegexOptions.Compiled);
-			Regex regex_rank = new (@"""rank"":(\d)", RegexOptions.Compiled);
 
 			foreach (string entry in tab) {
 				string name = regex_name.Match(entry).Groups[1].Value;
@@ -328,14 +340,6 @@ namespace Polybius.Engines {
 					name = name.Trim(title_trim);
 				}
 
-				// Only return rank 3 of azerite essences.
-				if (type == Type.Essence) {
-					string rank = regex_rank.Match(entry).Groups[1].Value;
-					if (rank != "3") {
-						continue;
-					}
-				}
-
 				// Collate matches into a list.
 				if (name.ToLower() == token.query.ToLower()) {
 					string id = regex_id.Match(entry).Groups[1].Value;
@@ -345,7 +349,8 @@ namespace Polybius.Engines {
 						similarity = 1.0F,
 						name = name,
 						data = url,
-						type = type
+						type = type,
+						id = id
 					});
 				}
 			}
@@ -368,7 +373,7 @@ namespace Polybius.Engines {
 			case Type.Profession:
 				return $@"https://www.wowhead.com/spell={id}";
 			case Type.Essence:
-				return $@"https://www.wowhead.com/azerite-essence-power/{id}";
+				return $@"https://www.wowhead.com/azerite-essence/{id}";
 			case Type.Affix:
 				return $@"https://www.wowhead.com/affix={id}";
 			case Type.BattlePet:
@@ -392,6 +397,22 @@ namespace Polybius.Engines {
 			}
 		}
 
+		// Return the name of the spell (as shown in the header) at
+		// the provided link.
+		private static string get_spell_name(string url) {
+			HtmlDocument doc = http.Load(url);
+			HtmlNode page = doc.DocumentNode;
+
+			string xpath_title =
+				@"//div[@id='main-contents']" +
+				@"/div[@class='text']" +
+				@"/h1";
+			HtmlNode node_title = page.SelectSingleNode(xpath_title);
+
+			return node_title.InnerText;
+		}
+
+
 		public class WowheadSearchResult : SearchResult {
 			public enum Type {
 				Spell, CovenantSpell,
@@ -411,43 +432,188 @@ namespace Polybius.Engines {
 			};
 
 			public Type type;
+			public string id;
 
 			public override DiscordMessageBuilder get_display() {
 				DiscordEmbed embed = new DiscordEmbedBuilder()
+					.WithColor(embed_color)
 					.WithTitle(name)
-					.WithColor(Program.color_embed)
+					.WithUrl(data)
 					.WithFooter("powered by Wowhead", @"https://wow.zamimg.com/images/logos/favicon-standard.png");
 
-				string url_icon, tooltip;
-				switch (type) {
-				case Type.Spell:
-					HtmlDocument doc_html = http.Load(data);
-					HtmlNode doc = doc_html.DocumentNode;
+				// Load data url into a document for later reuse.
+				HtmlDocument doc = http.Load(data);
+				HtmlNode page = doc.DocumentNode;
 
-					string id = Regex.Match(data, @"spell=(?<id>\d+)", RegexOptions.Compiled).Groups["id"].Value;
-
-					url_icon = get_icon(doc, id);
-					tooltip = get_tooltip(doc);
-
-					Regex regex_tooltip_text = new Regex(@"<div class=\\""q\d?\\"">(?<text>.*)<\\\/div>", RegexOptions.Compiled);
-					string tooltip_text = "";
-					MatchCollection tooltip_parts = regex_tooltip_text.Matches(tooltip);
-					foreach (Match match in tooltip_parts) {
-						tooltip_text += match.Groups["text"].Value;
-						tooltip_text += "\n";
-					}
-					tooltip_text = tooltip_text.Replace(@"<br \/>", "\n");
-					tooltip_text = Regex.Replace(tooltip_text, @"<(?:\\\/)?span(?:.*?)>", "", RegexOptions.Compiled);
-					tooltip_text += $"\n*Read more: [Wowhead comments]({data}#comments)*";
-
+				// Parse the icon and add it to the embed if it exists.
+				string url_icon = get_icon(page);
+				if (url_icon is not null) {
 					embed = new DiscordEmbedBuilder(embed)
-						.WithUrl(data)
-						.WithThumbnail(url_icon)
-						.WithDescription(tooltip_text);
-					break;
+						.WithThumbnail(url_icon);
 				}
 
+				StringWriter writer = new ();
+				Dictionary<Type, Func<HtmlNode, string>> tooltips = new () {
+					{ Type.Spell        , text_spell },
+					{ Type.CovenantSpell, text_spell },
+					{ Type.Talent       , text_spell },
+					{ Type.PvpTalent    , text_spell },
+
+					{ Type.Memory        , text_spell },
+					{ Type.Conduit       , text_spell },
+					{ Type.SoulbindTalent, text_spell },
+					{ Type.AnimaPower    , text_spell },
+
+					{ Type.Essence, text_essence },
+				};
+
+				// Fetch tooltip text from function delegates.
+				string tooltip = tooltips[type](page);
+				writer.WriteLine(tooltip);
+				writer.WriteLine();
+				writer.WriteLine($"*More info: [Wowhead]({data}) \u2022 [comments]({data}#comments)*");
+				writer.Flush();
+				string description = writer.ToString();
+
+				// Construct embed and pass it to caller.
+				embed = new DiscordEmbedBuilder(embed)
+					.WithDescription(description);
 				return new DiscordMessageBuilder().WithEmbed(embed);
+			}
+
+			// Returns the thumbnail icon if one exists, or null otherwise.
+			private string get_icon(HtmlNode page) {
+				string data, name;
+				switch (type) {
+				case Type.Spell:
+				case Type.CovenantSpell:
+				case Type.Talent:
+				case Type.PvpTalent:
+				case Type.Memory:
+				case Type.Conduit:
+				case Type.SoulbindTalent:
+				case Type.AnimaPower:
+					data = get_tooltip_raw(page);
+
+					Regex regex_spell = new (
+						$@"""{id}"".*?""icon"":""(?<name>.+?)""",
+						RegexOptions.Compiled);
+					name = regex_spell.Match(data).Groups["name"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				case Type.Essence:
+					string xpath =
+						@"//div[@id='h1titleicon']" +
+						@"/following-sibling::script";
+					HtmlNode node_data = page.SelectSingleNode(xpath);
+					data = node_data.InnerText;
+
+					Regex regex_essence = new (
+						@"Icon\.create\(""(?<name>[\w]+)""",
+						RegexOptions.Compiled);
+					name = regex_essence.Match(data).Groups["name"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				default:
+					return null;
+				}
+			}
+
+			private string text_spell(HtmlNode page) {
+				string tooltip = get_tooltip(page);
+				tooltip = javascript_to_html(tooltip);
+
+				HtmlDocument dom = new ();
+				dom.LoadHtml(tooltip);
+
+				// Find the main text node, and explicitly add newlines.
+				string xpath_text = @"/table[2]/tr/td";
+				HtmlNode node_text = dom.DocumentNode.SelectSingleNode(xpath_text);
+				HtmlNodeCollection nodes = null;
+
+				// Replace <br> tags with newlines.
+				nodes = node_text.SelectNodes(@"//br");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.ReplaceChild(dom.CreateTextNode("\n"), node);
+					}
+				}
+				// Add newlines between top-level <div>s.
+				nodes = node_text.SelectNodes(@"//div/following-sibling::div");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
+					}
+				}
+				tooltip = node_text.InnerText;
+				
+				// Remove excess newlines (no more than 2 consecutive).
+				tooltip = Regex.Replace(tooltip, @"(?:\n){3,}", "\n\n");
+				return tooltip;
+			}
+
+			private string text_essence(HtmlNode page) {
+				string xpath_data =
+					@"//div[@id='article-all']" +
+					@"/following-sibling::script[2]";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
+
+				// Extract the paragraph with spell info.
+				string data = node_data.InnerText;
+				string[] blocks = data.Split("[hr]");
+				data = blocks[2];
+
+				// Extract the blocks describing major/minor powers.
+				data = data.Replace(@"\r\n", "\n");
+				blocks = data.Split("\n\n");
+				string text_major = blocks[2];
+				string text_minor = blocks[3];
+
+				// Extract the major/minor power spell links.
+				string get_spell_link(string data) {
+					Regex regex_id = new (
+						@"\[spell=(?<id>\d+)\]",
+						RegexOptions.Compiled);
+					string id = regex_id.Match(data).Groups["id"].Value;
+					string url = create_entry_url(Type.Spell, id);
+					string name = get_spell_name(url);
+					return $@"[{name}]({url})";
+				}
+
+				// Sanitize and format major/minor power list items.
+				void print_list_items(string data, StringWriter writer) {
+					Regex regex_item = new (
+						@"\[li\](?<item>.+)\[\\\/li\]",
+						RegexOptions.Compiled);
+					MatchCollection items = regex_item.Matches(data);
+
+					foreach (Match item in items) {
+						string line = item.Groups["item"].Value;
+						line = line.Replace(@"[b]", "**");
+						line = line.Replace(@"[\/b]", "**");
+						line = line.Replace(@"[i]", "*");
+						line = line.Replace(@"[\/i]", "*");
+						line = Regex.Replace(line, @"\[\\?\/?color(?:=q\d)?\]", "");
+						line = $" \u25E6 {line}";
+						writer.WriteLine(line);
+					}
+				}
+
+				// Construct and return the extracted, formatted text.
+				StringWriter writer = new ();
+
+				string link_major = get_spell_link(text_major);
+				writer.WriteLine($@"**Major Power:** {link_major}");
+				print_list_items(text_major, writer);
+
+				writer.WriteLine();
+
+				string link_minor = get_spell_link(text_minor);
+				writer.WriteLine($@"**Minor Power:** {link_minor}");
+				print_list_items(text_minor, writer);
+
+				writer.Flush();
+				return writer.ToString().TrimEnd();
 			}
 		}
 	}
