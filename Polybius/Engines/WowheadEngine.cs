@@ -325,7 +325,6 @@ namespace Polybius.Engines {
 			// [0] contains the match string itself.
 			Regex regex_name = new (@"""name"":""(.+?)""", RegexOptions.Compiled);
 			Regex regex_id = new (@"""id"":(\d+)", RegexOptions.Compiled);
-			Regex regex_rank = new (@"""rank"":(\d)", RegexOptions.Compiled);
 
 			foreach (string entry in tab) {
 				string name = regex_name.Match(entry).Groups[1].Value;
@@ -335,14 +334,6 @@ namespace Polybius.Engines {
 					name = name.Replace("%s", "");
 					char[] title_trim = { ' ', ',' };
 					name = name.Trim(title_trim);
-				}
-
-				// Only return rank 3 of azerite essences.
-				if (type == Type.Essence) {
-					string rank = regex_rank.Match(entry).Groups[1].Value;
-					if (rank != "3") {
-						continue;
-					}
 				}
 
 				// Collate matches into a list.
@@ -378,7 +369,7 @@ namespace Polybius.Engines {
 			case Type.Profession:
 				return $@"https://www.wowhead.com/spell={id}";
 			case Type.Essence:
-				return $@"https://www.wowhead.com/azerite-essence-power/{id}";
+				return $@"https://www.wowhead.com/azerite-essence/{id}";
 			case Type.Affix:
 				return $@"https://www.wowhead.com/affix={id}";
 			case Type.BattlePet:
