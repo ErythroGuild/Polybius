@@ -33,6 +33,9 @@ namespace Polybius.Engines {
 				@"//div[@id='search-listview']" +
 				@"/following-sibling::script";
 			HtmlNode node_data = page.SelectSingleNode(xpath_data);
+			if (node_data is null) {
+				return new List<SearchResult>();
+			}
 			string data = node_data.InnerText;
 
 			// Extract all the tabs and parse through their entries,
