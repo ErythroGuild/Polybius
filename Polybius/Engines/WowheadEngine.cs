@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -594,7 +594,7 @@ namespace Polybius.Engines {
 						line = line.Replace(@"[i]", "*");
 						line = line.Replace(@"[\/i]", "*");
 						line = Regex.Replace(line, @"\[\\?\/?color(?:=q\d)?\]", "");
-						line = $" \u25E6 {line}";
+						line = $"\u2002\u25E6 {line}";
 						writer.WriteLine(line);
 					}
 				}
