@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -133,6 +133,7 @@ namespace Polybius.Engines {
 			// From basic.js, `WH.Types` definition.
 			Dictionary<int, Type> dict = new() {
 				{ 6, Type.Spell },
+				{ 43, Type.Essence },
 				//this.NPC = 1;
 				//this.OBJECT = 2;
 				//this.ITEM = 3;
@@ -462,6 +463,8 @@ namespace Polybius.Engines {
 					{ Type.Conduit       , text_spell },
 					{ Type.SoulbindTalent, text_spell },
 					{ Type.AnimaPower    , text_spell },
+
+					{ Type.Essence, text_essence },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -496,6 +499,19 @@ namespace Polybius.Engines {
 						$@"""{id}"".*?""icon"":""(?<name>.+?)""",
 						RegexOptions.Compiled);
 					name = regex_spell.Match(data).Groups["name"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				case Type.Essence:
+					string xpath =
+						@"//div[@id='h1titleicon']" +
+						@"/following-sibling::script";
+					HtmlNode node_data = page.SelectSingleNode(xpath);
+					data = node_data.InnerText;
+
+					Regex regex_essence = new (
+						@"Icon\.create\(""(?<name>[\w]+)""",
+						RegexOptions.Compiled);
+					name = regex_essence.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				default:
@@ -534,6 +550,70 @@ namespace Polybius.Engines {
 				// Remove excess newlines (no more than 2 consecutive).
 				tooltip = Regex.Replace(tooltip, @"(?:\n){3,}", "\n\n");
 				return tooltip;
+			}
+
+			private string text_essence(HtmlNode page) {
+				string xpath_data =
+					@"//div[@id='article-all']" +
+					@"/following-sibling::script[2]";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
+
+				// Extract the paragraph with spell info.
+				string data = node_data.InnerText;
+				string[] blocks = data.Split("[hr]");
+				data = blocks[2];
+
+				// Extract the blocks describing major/minor powers.
+				data = data.Replace(@"\r\n", "\n");
+				blocks = data.Split("\n\n");
+				string text_major = blocks[2];
+				string text_minor = blocks[3];
+
+				// Extract the major/minor power spell links.
+				string get_spell_link(string data) {
+					Regex regex_id = new (
+						@"\[spell=(?<id>\d+)\]",
+						RegexOptions.Compiled);
+					string id = regex_id.Match(data).Groups["id"].Value;
+					string url = create_entry_url(Type.Spell, id);
+					string name = get_spell_name(url);
+					return $@"[{name}]({url})";
+				}
+
+				// Sanitize and format major/minor power list items.
+				void print_list_items(string data, StringWriter writer) {
+					Regex regex_item = new (
+						@"\[li\](?<item>.+)\[\\\/li\]",
+						RegexOptions.Compiled);
+					MatchCollection items = regex_item.Matches(data);
+
+					foreach (Match item in items) {
+						string line = item.Groups["item"].Value;
+						line = line.Replace(@"[b]", "**");
+						line = line.Replace(@"[\/b]", "**");
+						line = line.Replace(@"[i]", "*");
+						line = line.Replace(@"[\/i]", "*");
+						line = Regex.Replace(line, @"\[\\?\/?color(?:=q\d)?\]", "");
+						line = $" \u25E6 {line}";
+						writer.WriteLine(line);
+					}
+				}
+
+				// Construct and return the extracted, formatted text.
+				StringWriter writer = new ();
+
+				string link_major = get_spell_link(text_major);
+				writer.WriteLine($@"**Major Power:** {link_major}");
+				print_list_items(text_major, writer);
+
+				writer.WriteLine();
+
+				string link_minor = get_spell_link(text_minor);
+				writer.WriteLine($@"**Minor Power:** {link_minor}");
+				print_list_items(text_minor, writer);
+
+				writer.Flush();
+				return writer.ToString().TrimEnd();
 			}
 		}
 	}
