@@ -467,6 +467,7 @@ namespace Polybius.Engines {
 					{ Type.Essence, text_essence },
 
 					{ Type.Affix, text_affix },
+					{ Type.Mount, text_spell },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -495,6 +496,7 @@ namespace Polybius.Engines {
 				case Type.Conduit:
 				case Type.SoulbindTalent:
 				case Type.AnimaPower:
+				case Type.Mount:
 					data = get_tooltip_raw(page);
 
 					Regex regex_spell = new (
@@ -552,7 +554,7 @@ namespace Polybius.Engines {
 				
 				// Remove excess newlines (no more than 2 consecutive).
 				tooltip = Regex.Replace(tooltip, @"(?:\n){3,}", "\n\n");
-				return tooltip;
+				return tooltip.TrimEnd();
 			}
 
 			private string text_essence(HtmlNode page) {
