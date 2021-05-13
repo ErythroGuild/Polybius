@@ -468,6 +468,8 @@ namespace Polybius.Engines {
 
 					{ Type.Affix, text_affix },
 					{ Type.Mount, text_spell },
+
+					{ Type.BattlePet, text_battlepet },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -486,7 +488,10 @@ namespace Polybius.Engines {
 
 			// Returns the thumbnail icon if one exists, or null otherwise.
 			private string get_icon(HtmlNode page) {
-				string data, name;
+				string xpath, data, name;
+				Regex regex;
+				HtmlNode node_data;
+
 				switch (type) {
 				case Type.Spell:
 				case Type.CovenantSpell:
@@ -499,24 +504,38 @@ namespace Polybius.Engines {
 				case Type.Mount:
 					data = get_tooltip_raw(page);
 
-					Regex regex_spell = new (
+					regex = new (
 						$@"""{id}"".*?""icon"":""(?<name>.+?)""",
 						RegexOptions.Compiled);
-					name = regex_spell.Match(data).Groups["name"].Value;
+					name = regex.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				case Type.Essence:
 				case Type.Affix:
-					string xpath =
+					xpath =
 						@"//div[@id='h1titleicon']" +
 						@"/following-sibling::script";
-					HtmlNode node_data = page.SelectSingleNode(xpath);
+					node_data = page.SelectSingleNode(xpath);
 					data = node_data.InnerText;
 
-					Regex regex_essence = new (
-						@"Icon\.create\(['""](?<name>[\w]+)['""]",
+					regex = new (
+						@"Icon\.create\(['""](?<name>\w+)['""]",
 						RegexOptions.Compiled);
-					name = regex_essence.Match(data).Groups["name"].Value;
+					name = regex.Match(data).Groups["name"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				case Type.BattlePet:
+					xpath =
+						@"//div[@id='main-contents']" +
+						@"/div[@class='text']" +
+						@"/script";
+					node_data = page.SelectSingleNode(xpath);
+					data = node_data.InnerText;
+
+					regex = new (
+						@"Icon\.create\(['""](?<name>\w+)['""]",
+						RegexOptions.Compiled);
+					name = regex.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				default:
@@ -625,6 +644,15 @@ namespace Polybius.Engines {
 				string xpath_data = @"//div[@id='article-all']";
 				HtmlNode node_data = page.SelectSingleNode(xpath_data);
 				node_data = node_data.PreviousSibling;
+				return node_data.InnerText;
+			}
+
+			private string text_battlepet(HtmlNode page) {
+				string xpath_data =
+						@"//div[@id='main-contents']" +
+						@"/div[@class='text']" +
+						@"/p";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
 				return node_data.InnerText;
 			}
 		}
