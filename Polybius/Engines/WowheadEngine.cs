@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -219,7 +219,7 @@ namespace Polybius.Engines {
 		private static string get_tooltip(HtmlNode page) {
 			StringReader data = new (get_tooltip_raw(page));
 			Regex regex_tooltip = new (
-				@"g_spells\[\d+\]\.tooltip_enus = ""(.+)"";",
+				@"g_\w+\[\d+\]\.tooltip_enus = ""(.+)"";",
 				RegexOptions.Compiled);
 
 			// Only one entry should have tooltip data associated
@@ -469,7 +469,8 @@ namespace Polybius.Engines {
 					{ Type.Affix, text_affix },
 					{ Type.Mount, text_spell },
 
-					{ Type.BattlePet, text_battlepet },
+					{ Type.BattlePet     , text_battlepet },
+					{ Type.BattlePetSpell, text_spell     },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -534,6 +535,20 @@ namespace Polybius.Engines {
 
 					regex = new (
 						@"Icon\.create\(['""](?<name>\w+)['""]",
+						RegexOptions.Compiled);
+					name = regex.Match(data).Groups["name"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				case Type.BattlePetSpell:
+					xpath =
+						@"//div[@id='main-contents']" +
+						@"/div[@class='text']" +
+						@"/script";
+					node_data = page.SelectSingleNode(xpath);
+					data = node_data.InnerText;
+
+					regex = new (
+						@"""icon"":""(?<name>\w+)""",
 						RegexOptions.Compiled);
 					name = regex.Match(data).Groups["name"].Value;
 
