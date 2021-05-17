@@ -472,7 +472,8 @@ namespace Polybius.Engines {
 					{ Type.BattlePet     , text_battlepet },
 					{ Type.BattlePetSpell, text_spell     },
 
-					{ Type.Item, text_item },
+					{ Type.Item       , text_item        },
+					{ Type.Achievement, text_achievement },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -552,6 +553,20 @@ namespace Polybius.Engines {
 
 					regex = new (
 						@"""icon"":""(?<name>\w+)""",
+						RegexOptions.Compiled);
+					name = regex.Match(data).Groups["name"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				case Type.Achievement:
+					xpath =
+						@"//div[@id='main-contents']" +
+						@"/div[@class='text']" +
+						@"/h1/following-sibling::script";
+					node_data = page.SelectSingleNode(xpath);
+					data = node_data.InnerText;
+
+					regex = new (
+						@"Icon\.create\(['""](?<name>\w+)['""]",
 						RegexOptions.Compiled);
 					name = regex.Match(data).Groups["name"].Value;
 
@@ -744,6 +759,25 @@ namespace Polybius.Engines {
 				// Remove excess newlines (no more than 2 consecutive).
 				tooltip = Regex.Replace(tooltip, @"(?:\n){3,}", "\n\n");
 				return tooltip.TrimEnd();
+			}
+
+			private string text_achievement(HtmlNode page) {
+				string xpath_data =
+					@"//div[@id='main-contents']" +
+					@"/div[@class='text']" +
+					@"/text()";
+				HtmlNodeCollection nodes = page.SelectNodes(xpath_data);
+
+				foreach (HtmlNode node in nodes) {
+					string text = node.InnerText.Trim();
+					if (text == string.Empty) {
+						continue;
+					} else {
+						return text;
+					}
+				}
+
+				return "";
 			}
 		}
 	}
