@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -471,6 +471,8 @@ namespace Polybius.Engines {
 
 					{ Type.BattlePet     , text_battlepet },
 					{ Type.BattlePetSpell, text_spell     },
+
+					{ Type.Item, text_item },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -540,6 +542,7 @@ namespace Polybius.Engines {
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				case Type.BattlePetSpell:
+				case Type.Item:
 					xpath =
 						@"//div[@id='main-contents']" +
 						@"/div[@class='text']" +
@@ -669,6 +672,78 @@ namespace Polybius.Engines {
 						@"/p";
 				HtmlNode node_data = page.SelectSingleNode(xpath_data);
 				return node_data.InnerText;
+			}
+
+			private string text_item(HtmlNode page) {
+				// Find tooltip data.
+				string xpath_data =
+					@"//div[@id='main-contents']" +
+					@"/div[@class='text']" +
+					@"/preceding-sibling::script[2]";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
+				string data = node_data.InnerText;
+
+				// Recover and sanitize tooltip HTML.
+				Regex regex_tooltip = new (
+					@"g_\w+\[\d+\]\.tooltip_enus = ""(?<tooltip>.+)"";",
+					RegexOptions.Compiled);
+				string tooltip = regex_tooltip.Match(data).Groups["tooltip"].Value;
+				tooltip = javascript_to_html(tooltip);
+
+				// Create a new HTML parser.
+				HtmlDocument dom = new ();
+				dom.LoadHtml(tooltip);
+
+				// Find the main text node, and explicitly add newlines.
+				string xpath_text = @"/table[2]/tr/td";
+				HtmlNode node_text = dom.DocumentNode.SelectSingleNode(xpath_text);
+				HtmlNodeCollection nodes = null;
+
+				// Replace <br> tags with newlines.
+				nodes = node_text.SelectNodes(@"//br");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.ReplaceChild(dom.CreateTextNode("\n"), node);
+					}
+				}
+				// Add newlines between top-level <div>s.
+				nodes = node_text.SelectNodes(@"//div/following-sibling::div");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
+					}
+				}
+				// Add newlines between <span>/<div> interfaces.
+				nodes = node_text.SelectNodes(@"//span/following-sibling::div");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
+					}
+				}
+				// Add units to "money" nodes.
+				nodes = node_text.SelectNodes(@"//span[@class='moneygold']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("g "), node);
+					}
+				}
+				nodes = node_text.SelectNodes(@"//span[@class='moneysilver']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("s "), node);
+					}
+				}
+				nodes = node_text.SelectNodes(@"//span[@class='moneycopper']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("c "), node);
+					}
+				}
+				tooltip = node_text.InnerText;
+
+				// Remove excess newlines (no more than 2 consecutive).
+				tooltip = Regex.Replace(tooltip, @"(?:\n){3,}", "\n\n");
+				return tooltip.TrimEnd();
 			}
 		}
 	}
