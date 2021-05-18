@@ -474,6 +474,7 @@ namespace Polybius.Engines {
 
 					{ Type.Item       , text_item        },
 					{ Type.Achievement, text_achievement },
+					{ Type.Quest      , text_quest       },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -572,6 +573,7 @@ namespace Polybius.Engines {
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				default:
+				case Type.Quest:
 					return null;
 				}
 			}
@@ -766,6 +768,26 @@ namespace Polybius.Engines {
 					@"//div[@id='main-contents']" +
 					@"/div[@class='text']" +
 					@"/text()";
+				HtmlNodeCollection nodes = page.SelectNodes(xpath_data);
+
+				foreach (HtmlNode node in nodes) {
+					string text = node.InnerText.Trim();
+					if (text == string.Empty) {
+						continue;
+					} else {
+						return text;
+					}
+				}
+
+				return "";
+			}
+
+			private string text_quest(HtmlNode page) {
+				string xpath_data =
+					@"//div[@id='main-contents']" +
+					@"/div[@class='text']" +
+					@"/h2[1]" +
+					@"/preceding-sibling::text()";
 				HtmlNodeCollection nodes = page.SelectNodes(xpath_data);
 
 				foreach (HtmlNode node in nodes) {
