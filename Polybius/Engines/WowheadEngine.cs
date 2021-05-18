@@ -817,11 +817,11 @@ namespace Polybius.Engines {
 			}
 
 			private string text_faction(HtmlNode page) {
-				return "";
+				return "**Faction**";
 			}
 
 			private string text_title(HtmlNode page) {
-				return "";
+				return "**Title**";
 			}
 		}
 	}
