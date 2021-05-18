@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -681,7 +681,7 @@ namespace Polybius.Engines {
 				string xpath_data = @"//div[@id='article-all']";
 				HtmlNode node_data = page.SelectSingleNode(xpath_data);
 				node_data = node_data.PreviousSibling;
-				return node_data.InnerText;
+				return node_data.InnerText.Trim();
 			}
 
 			private string text_battlepet(HtmlNode page) {
@@ -690,7 +690,7 @@ namespace Polybius.Engines {
 						@"/div[@class='text']" +
 						@"/p";
 				HtmlNode node_data = page.SelectSingleNode(xpath_data);
-				return node_data.InnerText;
+				return node_data.InnerText.Trim();
 			}
 
 			private string text_item(HtmlNode page) {
