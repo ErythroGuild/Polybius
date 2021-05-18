@@ -219,7 +219,7 @@ namespace Polybius.Engines {
 		private static string get_tooltip(HtmlNode page) {
 			StringReader data = new (get_tooltip_raw(page));
 			Regex regex_tooltip = new (
-				@"g_spells\[\d+\]\.tooltip_enus = ""(.+)"";",
+				@"g_\w+\[\d+\]\.tooltip_enus = ""(.+)"";",
 				RegexOptions.Compiled);
 
 			// Only one entry should have tooltip data associated
@@ -252,6 +252,7 @@ namespace Polybius.Engines {
 		private static string javascript_to_html(string input) {
 			input = input.Replace(@"\""", "\"");
 			input = input.Replace(@"\/", "/");
+			input = input.Replace(@"&nbsp;", " ");
 			return input;
 		}
 
@@ -465,6 +466,20 @@ namespace Polybius.Engines {
 					{ Type.AnimaPower    , text_spell },
 
 					{ Type.Essence, text_essence },
+
+					{ Type.Affix, text_affix },
+					{ Type.Mount, text_spell },
+
+					{ Type.BattlePet     , text_battlepet },
+					{ Type.BattlePetSpell, text_spell     },
+
+					{ Type.Item       , text_item        },
+					{ Type.Achievement, text_achievement },
+					{ Type.Quest      , text_quest       },
+					{ Type.Currency   , text_currency    },
+					{ Type.Faction    , text_faction     },
+					{ Type.Title      , text_title       },
+					{ Type.Profession , text_spell       },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -483,7 +498,10 @@ namespace Polybius.Engines {
 
 			// Returns the thumbnail icon if one exists, or null otherwise.
 			private string get_icon(HtmlNode page) {
-				string data, name;
+				string xpath, data, name;
+				Regex regex;
+				HtmlNode node_data;
+
 				switch (type) {
 				case Type.Spell:
 				case Type.CovenantSpell:
@@ -493,28 +511,78 @@ namespace Polybius.Engines {
 				case Type.Conduit:
 				case Type.SoulbindTalent:
 				case Type.AnimaPower:
+				case Type.Mount:
+				case Type.Profession:
 					data = get_tooltip_raw(page);
 
-					Regex regex_spell = new (
+					regex = new (
 						$@"""{id}"".*?""icon"":""(?<name>.+?)""",
 						RegexOptions.Compiled);
-					name = regex_spell.Match(data).Groups["name"].Value;
+					name = regex.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				case Type.Essence:
-					string xpath =
+				case Type.Affix:
+					xpath =
 						@"//div[@id='h1titleicon']" +
 						@"/following-sibling::script";
-					HtmlNode node_data = page.SelectSingleNode(xpath);
+					node_data = page.SelectSingleNode(xpath);
 					data = node_data.InnerText;
 
-					Regex regex_essence = new (
-						@"Icon\.create\(""(?<name>[\w]+)""",
+					regex = new (
+						@"Icon\.create\(['""](?<name>\w+)['""]",
 						RegexOptions.Compiled);
-					name = regex_essence.Match(data).Groups["name"].Value;
+					name = regex.Match(data).Groups["name"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				case Type.BattlePet:
+				case Type.Currency:
+					xpath =
+						@"//div[@id='main-contents']" +
+						@"/div[@class='text']" +
+						@"/script";
+					node_data = page.SelectSingleNode(xpath);
+					data = node_data.InnerText;
+
+					regex = new (
+						@"Icon\.create\(['""](?<name>\w+)['""]",
+						RegexOptions.Compiled);
+					name = regex.Match(data).Groups["name"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				case Type.BattlePetSpell:
+				case Type.Item:
+					xpath =
+						@"//div[@id='main-contents']" +
+						@"/div[@class='text']" +
+						@"/script";
+					node_data = page.SelectSingleNode(xpath);
+					data = node_data.InnerText;
+
+					regex = new (
+						@"""icon"":""(?<name>\w+)""",
+						RegexOptions.Compiled);
+					name = regex.Match(data).Groups["name"].Value;
+
+					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
+				case Type.Achievement:
+					xpath =
+						@"//div[@id='main-contents']" +
+						@"/div[@class='text']" +
+						@"/h1/following-sibling::script";
+					node_data = page.SelectSingleNode(xpath);
+					data = node_data.InnerText;
+
+					regex = new (
+						@"Icon\.create\(['""](?<name>\w+)['""]",
+						RegexOptions.Compiled);
+					name = regex.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				default:
+				case Type.Quest:
+				case Type.Faction:
+				case Type.Title:
 					return null;
 				}
 			}
@@ -545,11 +613,30 @@ namespace Polybius.Engines {
 						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
 					}
 				}
+				// Add units to "money" nodes.
+				nodes = node_text.SelectNodes(@"//span[@class='moneygold']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("g "), node);
+					}
+				}
+				nodes = node_text.SelectNodes(@"//span[@class='moneysilver']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("s "), node);
+					}
+				}
+				nodes = node_text.SelectNodes(@"//span[@class='moneycopper']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("c "), node);
+					}
+				}
 				tooltip = node_text.InnerText;
 				
 				// Remove excess newlines (no more than 2 consecutive).
 				tooltip = Regex.Replace(tooltip, @"(?:\n){3,}", "\n\n");
-				return tooltip;
+				return tooltip.TrimEnd();
 			}
 
 			private string text_essence(HtmlNode page) {
@@ -594,7 +681,7 @@ namespace Polybius.Engines {
 						line = line.Replace(@"[i]", "*");
 						line = line.Replace(@"[\/i]", "*");
 						line = Regex.Replace(line, @"\[\\?\/?color(?:=q\d)?\]", "");
-						line = $" \u25E6 {line}";
+						line = $"\u2002\u25E6 {line}";
 						writer.WriteLine(line);
 					}
 				}
@@ -614,6 +701,150 @@ namespace Polybius.Engines {
 
 				writer.Flush();
 				return writer.ToString().TrimEnd();
+			}
+
+			private string text_affix(HtmlNode page) {
+				string xpath_data = @"//div[@id='article-all']";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
+				node_data = node_data.PreviousSibling;
+				return node_data.InnerText.Trim();
+			}
+
+			private string text_battlepet(HtmlNode page) {
+				string xpath_data =
+						@"//div[@id='main-contents']" +
+						@"/div[@class='text']" +
+						@"/p";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
+				return node_data.InnerText.Trim();
+			}
+
+			private string text_item(HtmlNode page) {
+				// Find tooltip data.
+				string xpath_data =
+					@"//div[@id='main-contents']" +
+					@"/div[@class='text']" +
+					@"/preceding-sibling::script[2]";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
+				string data = node_data.InnerText;
+
+				// Recover and sanitize tooltip HTML.
+				Regex regex_tooltip = new (
+					@"g_\w+\[\d+\]\.tooltip_enus = ""(?<tooltip>.+)"";",
+					RegexOptions.Compiled);
+				string tooltip = regex_tooltip.Match(data).Groups["tooltip"].Value;
+				tooltip = javascript_to_html(tooltip);
+
+				// Create a new HTML parser.
+				HtmlDocument dom = new ();
+				dom.LoadHtml(tooltip);
+
+				// Find the main text node, and explicitly add newlines.
+				string xpath_text = @"/table[2]/tr/td";
+				HtmlNode node_text = dom.DocumentNode.SelectSingleNode(xpath_text);
+				HtmlNodeCollection nodes = null;
+
+				// Replace <br> tags with newlines.
+				nodes = node_text.SelectNodes(@"//br");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.ReplaceChild(dom.CreateTextNode("\n"), node);
+					}
+				}
+				// Add newlines between top-level <div>s.
+				nodes = node_text.SelectNodes(@"//div/following-sibling::div");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
+					}
+				}
+				// Add newlines between <span>/<div> interfaces.
+				nodes = node_text.SelectNodes(@"//span/following-sibling::div");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
+					}
+				}
+				// Add units to "money" nodes.
+				nodes = node_text.SelectNodes(@"//span[@class='moneygold']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("g "), node);
+					}
+				}
+				nodes = node_text.SelectNodes(@"//span[@class='moneysilver']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("s "), node);
+					}
+				}
+				nodes = node_text.SelectNodes(@"//span[@class='moneycopper']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("c "), node);
+					}
+				}
+				tooltip = node_text.InnerText;
+
+				// Remove excess newlines (no more than 2 consecutive).
+				tooltip = Regex.Replace(tooltip, @"(?:\n){3,}", "\n\n");
+				return tooltip.TrimEnd();
+			}
+
+			private string text_achievement(HtmlNode page) {
+				string xpath_data =
+					@"//div[@id='main-contents']" +
+					@"/div[@class='text']" +
+					@"/text()";
+				HtmlNodeCollection nodes = page.SelectNodes(xpath_data);
+
+				foreach (HtmlNode node in nodes) {
+					string text = node.InnerText.Trim();
+					if (text == string.Empty) {
+						continue;
+					} else {
+						return text;
+					}
+				}
+
+				return "";
+			}
+
+			private string text_quest(HtmlNode page) {
+				string xpath_data =
+					@"//div[@id='main-contents']" +
+					@"/div[@class='text']" +
+					@"/h2[1]" +
+					@"/preceding-sibling::text()";
+				HtmlNodeCollection nodes = page.SelectNodes(xpath_data);
+
+				foreach (HtmlNode node in nodes) {
+					string text = node.InnerText.Trim();
+					if (text == string.Empty) {
+						continue;
+					} else {
+						return text;
+					}
+				}
+
+				return "";
+			}
+
+			private string text_currency(HtmlNode page) {
+				string xpath_data =
+					@"//div[@id='main-contents']" +
+					@"/div[@class='text']" +
+					@"/p";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
+				return node_data.InnerText.Trim();
+			}
+
+			private string text_faction(HtmlNode page) {
+				return "**Faction**";
+			}
+
+			private string text_title(HtmlNode page) {
+				return "**Title**";
 			}
 		}
 	}
