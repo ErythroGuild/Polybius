@@ -476,6 +476,7 @@ namespace Polybius.Engines {
 					{ Type.Achievement, text_achievement },
 					{ Type.Quest      , text_quest       },
 					{ Type.Currency   , text_currency    },
+					{ Type.Faction    , text_faction     },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -576,6 +577,7 @@ namespace Polybius.Engines {
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				default:
 				case Type.Quest:
+				case Type.Faction:
 					return null;
 				}
 			}
@@ -811,6 +813,10 @@ namespace Polybius.Engines {
 					@"/p";
 				HtmlNode node_data = page.SelectSingleNode(xpath_data);
 				return node_data.InnerText.Trim();
+			}
+
+			private string text_faction(HtmlNode page) {
+				return "";
 			}
 		}
 	}
