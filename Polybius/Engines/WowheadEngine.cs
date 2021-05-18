@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -475,6 +475,7 @@ namespace Polybius.Engines {
 					{ Type.Item       , text_item        },
 					{ Type.Achievement, text_achievement },
 					{ Type.Quest      , text_quest       },
+					{ Type.Currency   , text_currency    },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -530,6 +531,7 @@ namespace Polybius.Engines {
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
 				case Type.BattlePet:
+				case Type.Currency:
 					xpath =
 						@"//div[@id='main-contents']" +
 						@"/div[@class='text']" +
@@ -800,6 +802,15 @@ namespace Polybius.Engines {
 				}
 
 				return "";
+			}
+
+			private string text_currency(HtmlNode page) {
+				string xpath_data =
+					@"//div[@id='main-contents']" +
+					@"/div[@class='text']" +
+					@"/p";
+				HtmlNode node_data = page.SelectSingleNode(xpath_data);
+				return node_data.InnerText.Trim();
 			}
 		}
 	}
