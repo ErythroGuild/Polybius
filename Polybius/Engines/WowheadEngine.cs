@@ -477,6 +477,7 @@ namespace Polybius.Engines {
 					{ Type.Quest      , text_quest       },
 					{ Type.Currency   , text_currency    },
 					{ Type.Faction    , text_faction     },
+					{ Type.Title      , text_title       },
 				};
 
 				// Fetch tooltip text from function delegates.
