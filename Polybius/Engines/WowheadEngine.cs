@@ -578,6 +578,7 @@ namespace Polybius.Engines {
 				default:
 				case Type.Quest:
 				case Type.Faction:
+				case Type.Title:
 					return null;
 				}
 			}
@@ -816,6 +817,10 @@ namespace Polybius.Engines {
 			}
 
 			private string text_faction(HtmlNode page) {
+				return "";
+			}
+
+			private string text_title(HtmlNode page) {
 				return "";
 			}
 		}
