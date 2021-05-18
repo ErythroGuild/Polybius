@@ -252,6 +252,7 @@ namespace Polybius.Engines {
 		private static string javascript_to_html(string input) {
 			input = input.Replace(@"\""", "\"");
 			input = input.Replace(@"\/", "/");
+			input = input.Replace(@"&nbsp;", " ");
 			return input;
 		}
 
@@ -478,6 +479,7 @@ namespace Polybius.Engines {
 					{ Type.Currency   , text_currency    },
 					{ Type.Faction    , text_faction     },
 					{ Type.Title      , text_title       },
+					{ Type.Profession , text_spell       },
 				};
 
 				// Fetch tooltip text from function delegates.
@@ -510,6 +512,7 @@ namespace Polybius.Engines {
 				case Type.SoulbindTalent:
 				case Type.AnimaPower:
 				case Type.Mount:
+				case Type.Profession:
 					data = get_tooltip_raw(page);
 
 					regex = new (
@@ -608,6 +611,25 @@ namespace Polybius.Engines {
 				if (nodes is not null) {
 					foreach (HtmlNode node in nodes) {
 						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
+					}
+				}
+				// Add units to "money" nodes.
+				nodes = node_text.SelectNodes(@"//span[@class='moneygold']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("g "), node);
+					}
+				}
+				nodes = node_text.SelectNodes(@"//span[@class='moneysilver']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("s "), node);
+					}
+				}
+				nodes = node_text.SelectNodes(@"//span[@class='moneycopper']");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertAfter(dom.CreateTextNode("c "), node);
 					}
 				}
 				tooltip = node_text.InnerText;
