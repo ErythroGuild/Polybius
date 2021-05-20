@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -76,16 +76,15 @@ namespace Polybius.Engines {
 			// Find and parse the `g_pageInfo` string.
 			string pageinfo = parse_pageinfo(doc);
 			Regex regex = new(
-				@"""type"":(?<type>\d+),""typeId"":(?<typeid>\d+),""name"":""(?<name>.+)""",
+				@"""typeId"":(?<id>\d+),""name"":""(?<name>.+)""",
 				RegexOptions.Compiled);
 			GroupCollection match = regex.Match(pageinfo).Groups;
-			int type_int = Convert.ToInt32(match["type"].Value);
-			string id = match["typeid"].Value;
+			string id = match["id"].Value;
 			string name = match["name"].Value;
 
 			// Do not return any results if the result type isn't one
 			// of the explicitly supported ones.
-			Type? type = parse_type(type_int, doc);
+			Type? type = type_from_breadcrumb(doc);
 			if (type is null) {
 				return new List<SearchResult>();
 			}
@@ -113,7 +112,7 @@ namespace Polybius.Engines {
 
 			// Go through all <script> nodes until we find one that sets
 			// the `g_pageInfo` variable.
-			Regex regex_pageinfo = new(
+			Regex regex_pageinfo = new (
 				@"g_pageInfo = {(?<data>.+)};",
 				RegexOptions.Compiled);
 			foreach (HtmlNode node in nodes_data) {
@@ -126,92 +125,71 @@ namespace Polybius.Engines {
 			return null;
 		}
 
-		// Use the `g_pageInfo.type` value and pattern matching of the
-		// page itself to infer the `WowheadSearchResult.Type` of the page.
-		// Returns `null` if the inferred type isn't a supported type.
-		private static Type? parse_type(int type_int, HtmlNode page) {
-			// From basic.js, `WH.Types` definition.
-			Dictionary<int, Type> dict = new() {
-				{ 6, Type.Spell },
-				{ 43, Type.Essence },
-				//this.NPC = 1;
-				//this.OBJECT = 2;
-				//this.ITEM = 3;
-				//this.ITEM_SET = 4;
-				//this.QUEST = 5;
-				//this.SPELL = 6;
-				//this.ZONE = 7;
-				//this.FACTION = 8;
-				//this.PET = 9;
-				//this.ACHIEVEMENT = 10;
-				//this.TITLE = 11;
-				//this.EVENT = 12;
-				//this.CLASS = 13;
-				//this.RACE = 14;
-				//this.SKILL = 15;
-				//this.CURRENCY = 17;
-				//this.PROJECT = 18;
-				//this.SOUND = 19;
-				//this.BUILDING = 20;
-				//this.FOLLOWER = 21;
-				//this.MISSION_ABILITY = 22;
-				//this.MISSION = 23;
-				//this.SHIP = 25;
-				//this.THREAT = 26;
-				//this.RESOURCE = 27;
-				//this.CHAMPION = 28;
-				//this.ICON = 29;
-				//this.ORDER_ADVANCEMENT = 30;
-				//this.FOLLOWER_A = 31;
-				//this.FOLLOWER_H = 32;
-				//this.SHIP_A = 33;
-				//this.SHIP_H = 34;
-				//this.CHAMPION_A = 35;
-				//this.CHAMPION_H = 36;
-				//this.TRANSMOG_ITEM = 37;
-				//this.BFA_CHAMPION = 38;
-				//this.BFA_CHAMPION_A = 39;
-				//this.AFFIX = 40;
-				//this.BFA_CHAMPION_H = 41;
-				//this.AZERITE_ESSENCE_POWER = 42;
-				//this.AZERITE_ESSENCE = 43;
-				//this.STORYLINE = 44;
-				//this.ADVENTURE_COMBATANT_ABILITY = 46;
-				//this.ENCOUNTER = 47;
-				//this.COVENANT = 48;
-				//this.SOULBIND = 49;
-				//this.PET_ABILITY = 200;
-				//this.SCREENSHOT = 91;
-				//this.GUIDE_IMAGE = 98;
-				//this.GUIDE = 100;
-				//this.TRANSMOG_SET = 101;
-				//this.OUTFIT = 110;
-				//this.GEAR_SET = 111;
-				//this.LISTVIEW = 158;
-				//this.SURVEY_COVENANTS = 161;
-				//this.NEWS_POST = 162;
-			};
+		// Use the breadcrumb string to classify the page's Type.
+		private static Type? type_from_breadcrumb(HtmlNode page) {
+			string xpath_data =
+				@"//div[@id='infobox-original-position']" +
+				@"/following-sibling::script";
+			HtmlNodeCollection nodes_data = page.SelectNodes(xpath_data);
 
-			Type? type;
-			if (!dict.ContainsKey(type_int)) {
-				return null;
-			} else {
-				type = dict[type_int];
-			}
-
-			// Further disambiguate the types of results based on the HTML
-			// document itself.
-			string tooltip = get_tooltip(page);
-			switch (type) {
-			case Type.Spell:
-				if (tooltip.Contains("Covenant Ability")) {
-					type = Type.CovenantSpell;
+			// Go through all <script> nodes until we find one that sets
+			// the `g_pageInfo` variable, then extract the breadcrumb.
+			Regex regex_pageinfo = new (
+				@"g_pageInfo = {(?<data>.+)};",
+				RegexOptions.Compiled);
+			Regex regex_breadcrumb = new (
+				@"breadcrumb: \[(?<data>[\w\-"", ]+)\]",
+				RegexOptions.Compiled);
+			string breadcrumb = "";
+			foreach (HtmlNode node in nodes_data) {
+				string data = node.InnerText;
+				if (regex_pageinfo.IsMatch(data)) {
+					breadcrumb = regex_breadcrumb.Match(data).Groups["data"].Value;
 					break;
 				}
-				break;
 			}
 
-			return type;
+			// Format breadcrumb in a easily parseable context.
+			breadcrumb = breadcrumb.Replace(" ", "");
+			if (!breadcrumb.EndsWith(",")) {
+				breadcrumb = $"{breadcrumb},";
+			}
+
+			// Check the start of the breadcrumb and classify the page.
+			return breadcrumb switch {
+				var s when s.StartsWith("0,1,-4,")  => Type.Spell,   // racial
+				var s when s.StartsWith("0,1,7,")   => Type.Spell,   // general
+				var s when s.StartsWith("0,1,-12,") => Type.Spell,   // spec
+				var s when s.StartsWith("0,1,-3,")  => Type.Spell,   // pet
+				var s when s.StartsWith("0,1,-20,") => Type.CovenantSpell,
+				var s when s.StartsWith("0,1,-2,")  => Type.Talent,
+				var s when s.StartsWith("0,1,-16,") => Type.PvpTalent,
+
+				var s when s.StartsWith("0,1,-22,") => Type.Memory,
+				var s when s.StartsWith("0,1,-24,") => Type.Conduit,
+				var s when s.StartsWith("0,1,-23,") => Type.SoulbindTalent,
+				var s when s.StartsWith("0,1,-21,") => Type.AnimaPower,
+
+				var s when s.StartsWith("0,\"azerite-essences\",") => Type.Essence,
+				var s when s.StartsWith("0,1,-18,")                => Type.AzeriteTrait,
+
+				var s when s.StartsWith("0,40,")   => Type.Affix,
+				var s when s.StartsWith("0,1,-5,") => Type.Mount,
+
+				var s when s.StartsWith("0,17,2,") => Type.BattlePet,
+				var s when s.StartsWith("0,17,1,") => Type.BattlePetSpell,
+
+				var s when s.StartsWith("0,0,")    => Type.Item,
+				var s when s.StartsWith("0,9,")    => Type.Achievement,
+				var s when s.StartsWith("0,3,")    => Type.Quest,
+				var s when s.StartsWith("0,15,")   => Type.Currency,
+				var s when s.StartsWith("0,7,")    => Type.Faction,
+				var s when s.StartsWith("0,10,")   => Type.Title,
+				var s when s.StartsWith("0,1,11,") => Type.Profession,  // primary
+				var s when s.StartsWith("0,1,9,")  => Type.Profession,	// secondary
+
+				_ => null,
+			};
 		}
 
 		// Returns the tooltip data that is processed into HTML.
