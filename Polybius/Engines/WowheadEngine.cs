@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -285,7 +285,9 @@ namespace Polybius.Engines {
 				{ "soulbind-conduits" , Type.Conduit        },
 				{ "soulbind-abilities", Type.SoulbindTalent },
 				{ "anima-powers"      , Type.AnimaPower     },
-				{ "azerite-essence"   , Type.Essence        },
+
+				{ "azerite-essence", Type.Essence      },
+				{ "azerite-traits" , Type.AzeriteTrait },
 
 				{ "affixes", Type.Affix },
 				{ "mounts" , Type.Mount },
@@ -370,6 +372,7 @@ namespace Polybius.Engines {
 			case Type.Conduit:
 			case Type.SoulbindTalent:
 			case Type.AnimaPower:
+			case Type.AzeriteTrait:
 			case Type.Mount:
 			case Type.Profession:
 				return $@"https://www.wowhead.com/spell={id}";
@@ -419,7 +422,7 @@ namespace Polybius.Engines {
 				Spell, CovenantSpell,
 				Talent, PvpTalent,
 				Memory, Conduit, SoulbindTalent, AnimaPower,
-				Essence,
+				Essence, AzeriteTrait,
 				Affix,
 				Mount,
 				BattlePet, BattlePetSpell,
@@ -465,7 +468,8 @@ namespace Polybius.Engines {
 					{ Type.SoulbindTalent, text_spell },
 					{ Type.AnimaPower    , text_spell },
 
-					{ Type.Essence, text_essence },
+					{ Type.Essence     , text_essence },
+					{ Type.AzeriteTrait, text_spell   },
 
 					{ Type.Affix, text_affix },
 					{ Type.Mount, text_spell },
@@ -511,6 +515,7 @@ namespace Polybius.Engines {
 				case Type.Conduit:
 				case Type.SoulbindTalent:
 				case Type.AnimaPower:
+				case Type.AzeriteTrait:
 				case Type.Mount:
 				case Type.Profession:
 					data = get_tooltip_raw(page);
