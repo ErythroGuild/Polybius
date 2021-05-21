@@ -45,14 +45,14 @@ namespace Polybius.Commands {
 				tS = Settings.split_default;
 			}
 
-			text.WriteLine($"Surround anything you want to search for in your message with `{tL}` and `{tR}`.");
+			text.WriteLine($"Surround anything you want to search for in your message with `{tL}` and `{tR}`. E.g.:");
 			text.WriteLine($"> I would have done better if you had given me `{tL}innervate{tR}`.");
 			//text.WriteLine();
 			//text.WriteLine($"You can also add `{tS}` to use a specific search engine or specify which results you want.");
 			//text.WriteLine($"> Check out the new `{tL}Dreamrunner{tS}pet{tR}` model they added!");
 			text.WriteLine();
 			text.WriteLine("Use the command name to get more help on commands, e.g.:");
-			text.WriteLine("`@Polybius -help view-tokens`");
+			text.WriteLine("> `@Polybius -help view-tokens`");
 
 			text.Flush();
 			return text.ToString();
