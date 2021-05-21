@@ -9,7 +9,8 @@ namespace Polybius.Commands {
 	using HelpTable = Dictionary<Action<string, DiscordMessage>, Func<DiscordMessage, string>>;
 
 	class HelpCommand {
-		private static readonly string mention = Program.polybius.CurrentUser.Mention;
+		private static readonly string mention = $"@{Program.polybius.CurrentUser.Username}";
+
 		private static readonly HelpTable dict_help = new () {
 			{ HelpCommand.main, help_general },
 		};
