@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -27,6 +27,8 @@ namespace Polybius {
 			bot_queues_long = new ();
 
 		private const string path_token = @"config/token.txt";
+
+		private const ulong id_user_admin = 165557736287764483;
 
 		// Rate limits on responses to bot messages.
 		private static readonly TimeSpan
@@ -75,7 +77,7 @@ namespace Polybius {
 			{ "global_stats"   , AdminCommands.global_stats   },
 		};
 
-		private static readonly PermissionTable permission_dict = new() {
+		private static readonly PermissionTable dict_permission = new () {
 			{ ServerCommands.blacklist        , Permissions.ManageGuild    },
 			{ ServerCommands.whitelist        , Permissions.ManageGuild    },
 			{ ServerCommands.bot_channel      , Permissions.ManageGuild    },
@@ -87,6 +89,15 @@ namespace Polybius {
 			{ ServerCommands.view_tokens      , Permissions.AccessChannels },
 			{ ServerCommands.reset_server_settings, Permissions.ManageGuild },
 			{ ServerCommands.stats            , Permissions.ViewAuditLog   },
+		};
+
+		private static readonly List<CommandFunc> dict_admin = new () {
+			AdminCommands.exit,
+			AdminCommands.restart,
+			AdminCommands.suspend_db,
+			AdminCommands.resume_db,
+			AdminCommands.refresh_guilds,
+			AdminCommands.global_stats,
 		};
 
 		static void Main() {
@@ -357,14 +368,21 @@ namespace Polybius {
 				arg = arg.Trim();
 
 				if (command_list.ContainsKey(cmd)) {
-					// Check if permissions are needed (and met).
 					CommandFunc command = command_list[cmd];
-					if (permission_dict.ContainsKey(command)) {
+					// Check if server permissions are needed (and met).
+					if (dict_permission.ContainsKey(command)) {
 						DiscordMember author = (DiscordMember)msg.Author;
 						Permissions permissions = author.PermissionsIn(msg.Channel);
-						Permissions permission_req = permission_dict[command];
+						Permissions permission_req = dict_permission[command];
 						if (!permissions.HasPermission(permission_req)) {
 							_ = msg.RespondAsync(":warning: You do not have sufficient permissions to use that command.");
+							return;
+						}
+					}
+					// Check if admin permissions are needed (and met).
+					if (dict_admin.Contains(command)) {
+						if (msg.Author.Id != id_user_admin) {
+							_ = msg.RespondAsync(":warning: Only the Polybius admin can use that command.");
 							return;
 						}
 					}
