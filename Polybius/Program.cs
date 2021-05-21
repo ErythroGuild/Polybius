@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -36,8 +36,9 @@ namespace Polybius {
 			ratelimit_long = TimeSpan.FromMinutes(1);
 		private const int rate_short = 5, rate_long = 8;
 
-		// Cap on total queries per message.
+		// Per message caps for queries and results.
 		private const int cap_queries = 5;
+		private const int cap_results = 3;
 
 		private static readonly CommandTable command_list = new () {
 			{ "help", HelpCommand.main },
@@ -241,6 +242,11 @@ namespace Polybius {
 							Console.WriteLine("> No results found.");
 							_ = msg.RespondAsync($"No results found for `{query.query}`.");
 							return;
+						}
+
+						// Cap the results returned per query.
+						if (results.Count > cap_results) {
+							results = results.GetRange(0, cap_results);
 						}
 
 						foreach (SearchResult result in results) {
