@@ -9,6 +9,7 @@ namespace Polybius.Commands {
 	using HelpTable = Dictionary<Action<string, DiscordMessage>, Func<DiscordMessage, string>>;
 
 	class HelpCommand {
+		private static readonly string mention = Program.polybius.CurrentUser.Mention;
 		private static readonly HelpTable dict_help = new () {
 			{ HelpCommand.main, help_general },
 		};
@@ -28,6 +29,8 @@ namespace Polybius.Commands {
 			_ = msg.RespondAsync(response);
 		}
 
+		// The general help command, also given when an invalid argument
+		// is given. The only discoverable entry point to the bot.
 		private static string help_general(DiscordMessage msg) {
 			StringWriter text = new ();
 			string tL, tR, tS;
@@ -52,7 +55,7 @@ namespace Polybius.Commands {
 			//text.WriteLine($"> Check out the new `{tL}Dreamrunner{tS}pet{tR}` model they added!");
 			text.WriteLine();
 			text.WriteLine("Use the command name to get more help on commands, e.g.:");
-			text.WriteLine("> `@Polybius -help view-tokens`");
+			text.WriteLine($"> `{mention} -help view-tokens`");
 
 			text.Flush();
 			return text.ToString();
