@@ -11,7 +11,9 @@ using Polybius.Commands;
 using Polybius.Engines;
 
 namespace Polybius {
+	using CommandFunc = Action<string, DiscordMessage>;
 	using CommandTable = Dictionary<string, Action<string, DiscordMessage>>;
+	using PermissionTable = Dictionary<Action<string, DiscordMessage>, Permissions>;
 
 	class Program {
 		public record QueryMetaPair(string query, string meta);
@@ -26,11 +28,17 @@ namespace Polybius {
 
 		private const string path_token = @"config/token.txt";
 
+		private const ulong id_user_admin = 165557736287764483;
+
 		// Rate limits on responses to bot messages.
 		private static readonly TimeSpan
 			ratelimit_short = TimeSpan.FromSeconds(10),
 			ratelimit_long = TimeSpan.FromMinutes(1);
 		private const int rate_short = 5, rate_long = 8;
+
+		// Per message caps for queries and results.
+		private const int cap_queries = 5;
+		private const int cap_results = 3;
 
 		private static readonly CommandTable command_list = new () {
 			{ "help", HelpCommand.main },
@@ -68,6 +76,29 @@ namespace Polybius {
 			{ "refresh_servers", AdminCommands.refresh_guilds },
 			{ "refresh_guilds" , AdminCommands.refresh_guilds },
 			{ "global_stats"   , AdminCommands.global_stats   },
+		};
+
+		private static readonly PermissionTable dict_permission = new () {
+			{ ServerCommands.blacklist        , Permissions.ManageGuild    },
+			{ ServerCommands.whitelist        , Permissions.ManageGuild    },
+			{ ServerCommands.bot_channel      , Permissions.ManageGuild    },
+			{ ServerCommands.bot_channel_clear, Permissions.ManageGuild    },
+			{ ServerCommands.view_filters     , Permissions.AccessChannels },
+			{ ServerCommands.set_token_L      , Permissions.ManageGuild    },
+			{ ServerCommands.set_token_R      , Permissions.ManageGuild    },
+			{ ServerCommands.set_split        , Permissions.ManageGuild    },
+			{ ServerCommands.view_tokens      , Permissions.AccessChannels },
+			{ ServerCommands.reset_server_settings, Permissions.ManageGuild },
+			{ ServerCommands.stats            , Permissions.ViewAuditLog   },
+		};
+
+		private static readonly List<CommandFunc> dict_admin = new () {
+			AdminCommands.exit,
+			AdminCommands.restart,
+			AdminCommands.suspend_db,
+			AdminCommands.resume_db,
+			AdminCommands.refresh_guilds,
+			AdminCommands.global_stats,
 		};
 
 		static void Main() {
@@ -191,6 +222,11 @@ namespace Polybius {
 					if (queries.Count == 0)
 						{ return; }
 
+					// Cap the number of queries accepted per message.
+					if (queries.Count > cap_queries) {
+						queries = queries.GetRange(0, cap_queries);
+					}
+
 					// Indicate to the user that their query has been received
 					// and is currently being processed.
 					await msg.Channel.TriggerTypingAsync();
@@ -206,6 +242,11 @@ namespace Polybius {
 							Console.WriteLine("> No results found.");
 							_ = msg.RespondAsync($"No results found for `{query.query}`.");
 							return;
+						}
+
+						// Cap the results returned per query.
+						if (results.Count > cap_results) {
+							results = results.GetRange(0, cap_results);
 						}
 
 						foreach (SearchResult result in results) {
@@ -333,6 +374,24 @@ namespace Polybius {
 				arg = arg.Trim();
 
 				if (command_list.ContainsKey(cmd)) {
+					CommandFunc command = command_list[cmd];
+					// Check if server permissions are needed (and met).
+					if (dict_permission.ContainsKey(command)) {
+						DiscordMember author = (DiscordMember)msg.Author;
+						Permissions permissions = author.PermissionsIn(msg.Channel);
+						Permissions permission_req = dict_permission[command];
+						if (!permissions.HasPermission(permission_req)) {
+							_ = msg.RespondAsync(":warning: You do not have sufficient permissions to use that command.");
+							return;
+						}
+					}
+					// Check if admin permissions are needed (and met).
+					if (dict_admin.Contains(command)) {
+						if (msg.Author.Id != id_user_admin) {
+							_ = msg.RespondAsync(":warning: Only the Polybius admin can use that command.");
+							return;
+						}
+					}
 					command_list[cmd](arg, msg);
 				}
 				return;
