@@ -32,6 +32,9 @@ namespace Polybius {
 			ratelimit_long = TimeSpan.FromMinutes(1);
 		private const int rate_short = 5, rate_long = 8;
 
+		// Cap on total queries per message.
+		private const int cap_queries = 5;
+
 		private static readonly CommandTable command_list = new () {
 			{ "help", HelpCommand.main },
 			{ "h"   , HelpCommand.main },
@@ -190,6 +193,11 @@ namespace Polybius {
 						extract_queries(msg_text, msg.Channel?.GuildId ?? null);
 					if (queries.Count == 0)
 						{ return; }
+
+					// Cap the number of queries accepted per message.
+					if (queries.Count > cap_queries) {
+						queries = queries.GetRange(0, cap_queries);
+					}
 
 					// Indicate to the user that their query has been received
 					// and is currently being processed.
