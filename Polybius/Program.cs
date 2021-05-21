@@ -11,7 +11,9 @@ using Polybius.Commands;
 using Polybius.Engines;
 
 namespace Polybius {
+	using CommandFunc = Action<string, DiscordMessage>;
 	using CommandTable = Dictionary<string, Action<string, DiscordMessage>>;
+	using PermissionTable = Dictionary<Action<string, DiscordMessage>, Permissions>;
 
 	class Program {
 		public record QueryMetaPair(string query, string meta);
@@ -71,6 +73,20 @@ namespace Polybius {
 			{ "refresh_servers", AdminCommands.refresh_guilds },
 			{ "refresh_guilds" , AdminCommands.refresh_guilds },
 			{ "global_stats"   , AdminCommands.global_stats   },
+		};
+
+		private static readonly PermissionTable permission_dict = new() {
+			{ ServerCommands.blacklist        , Permissions.ManageGuild    },
+			{ ServerCommands.whitelist        , Permissions.ManageGuild    },
+			{ ServerCommands.bot_channel      , Permissions.ManageGuild    },
+			{ ServerCommands.bot_channel_clear, Permissions.ManageGuild    },
+			{ ServerCommands.view_filters     , Permissions.AccessChannels },
+			{ ServerCommands.set_token_L      , Permissions.ManageGuild    },
+			{ ServerCommands.set_token_R      , Permissions.ManageGuild    },
+			{ ServerCommands.set_split        , Permissions.ManageGuild    },
+			{ ServerCommands.view_tokens      , Permissions.AccessChannels },
+			{ ServerCommands.reset_server_settings, Permissions.ManageGuild },
+			{ ServerCommands.stats            , Permissions.ViewAuditLog   },
 		};
 
 		static void Main() {
@@ -341,6 +357,17 @@ namespace Polybius {
 				arg = arg.Trim();
 
 				if (command_list.ContainsKey(cmd)) {
+					// Check if permissions are needed (and met).
+					CommandFunc command = command_list[cmd];
+					if (permission_dict.ContainsKey(command)) {
+						DiscordMember author = (DiscordMember)msg.Author;
+						Permissions permissions = author.PermissionsIn(msg.Channel);
+						Permissions permission_req = permission_dict[command];
+						if (!permissions.HasPermission(permission_req)) {
+							_ = msg.RespondAsync(":warning: You do not have sufficient permissions to use that command.");
+							return;
+						}
+					}
 					command_list[cmd](arg, msg);
 				}
 				return;
