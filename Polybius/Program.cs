@@ -37,10 +37,10 @@ namespace Polybius {
 		private const int rate_short = 5, rate_long = 8;
 
 		// Per message caps for queries and results.
-		private const int cap_queries = 5;
+		internal const int cap_queries = 5;
 		private const int cap_results = 3;
 
-		private static readonly CommandTable command_list = new () {
+		internal static readonly CommandTable command_list = new () {
 			{ "help", HelpCommand.main },
 			{ "h"   , HelpCommand.main },
 			{ "?"   , HelpCommand.main },
