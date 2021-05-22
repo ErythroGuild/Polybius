@@ -9,7 +9,7 @@ namespace Polybius.Commands {
 	using HelpTable = Dictionary<Action<string, DiscordMessage>, Func<DiscordMessage, string>>;
 
 	class HelpCommand {
-		private static readonly string mention = $"@{Program.polybius.CurrentUser.Username}";
+		private static readonly string m = $"@{Program.polybius.CurrentUser.Username}";
 
 		private static readonly HelpTable dict_help = new () {
 			{ HelpCommand.main, help_general },
@@ -58,7 +58,7 @@ namespace Polybius.Commands {
 			//text.WriteLine($"> Check out the new `{tL}Dreamrunner{tS}pet{tR}` model they added!");
 			text.WriteLine();
 			text.WriteLine("Use the command name to get more help on commands, e.g.:");
-			text.WriteLine($"> `{mention} -help view-tokens`");
+			text.WriteLine($"> `{m} -help view-tokens`");
 
 			text.Flush();
 			return text.ToString();
@@ -68,21 +68,21 @@ namespace Polybius.Commands {
 		private static string help_filterlist(DiscordMessage msg) {
 			StringWriter text = new ();
 
-			text.WriteLine($"Use `{mention} -blacklist` & `{mention} -whitelist` to set up channel filters.");
-			text.WriteLine("Entering a channel already on a list will remove it from the list.");
+			text.WriteLine($"Use `{m} -blacklist` & `{m} -whitelist` to set up channel filters.");
+			text.WriteLine("Entering a channel already on a list will remove it from that list.");
 			text.WriteLine("You can specify channels with channel IDs / mention strings / channel names.");
 			text.WriteLine();
 			text.WriteLine("Some examples:");
-			text.WriteLine($"> `{mention} -whitelist 834981452453249054`");
-			text.WriteLine($"> `{mention} -blacklist #announcements`");
-			text.WriteLine($"> `{mention} -whitelist bot-spam`");
+			text.WriteLine($"> `{m} -whitelist 834981452453249054`");
+			text.WriteLine($"> `{m} -blacklist #announcements`");
+			text.WriteLine($"> `{m} -whitelist bot-spam`");
 			text.WriteLine();
 			text.WriteLine("Polybius will not respond to searches from channels on the blacklist.");
 			text.WriteLine("If a whitelist exists, Polybius will only respond to searches from those channels.");
 			text.WriteLine("If a whitelist does not exist, Polybius will respond to searches from all channels, *except* blacklisted ones.");
 			text.WriteLine();
-			text.WriteLine($"Use `{mention} -view-filters` to view the server's whitelist and blacklist.");
-			text.WriteLine($"Also see: `{mention} -help bot-channel`.");
+			text.WriteLine($"Use `{m} -view-filters` to view the server's whitelist and blacklist.");
+			text.WriteLine($"Also see: `{m} -help bot-channel`.");
 
 			text.Flush();
 			return text.ToString();
