@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -17,6 +17,7 @@ namespace Polybius.Commands {
 			{ ServerCommands.whitelist        , help_filterlist  },
 			{ ServerCommands.bot_channel      , help_botchannel  },
 			{ ServerCommands.bot_channel_clear, help_botchannel  },
+			{ ServerCommands.view_filters     , help_viewfilters },
 		};
 
 		// The general handler function called from the main program.
@@ -104,6 +105,18 @@ namespace Polybius.Commands {
 			text.WriteLine();
 			text.WriteLine($"Use `{m} -view-filters` to view the current bot channel.");
 			text.WriteLine($"Also see: `{m} -help blacklist` / `{m} -help whitelist`.");
+
+			text.Flush();
+			return text.ToString();
+		}
+
+		// The help command for viewing the blacklist & whitelist &
+		// bot channel.
+		private static string help_viewfilters(DiscordMessage msg) {
+			StringWriter text = new ();
+
+			text.WriteLine($"Use `{m} -view-filters` to view the current blacklist / whitelist / bot channel.");
+			text.WriteLine($"Also see: `{m} -help blacklist`, `{m} -help whitelist`, and `{m} -help bot-channel`.");
 
 			text.Flush();
 			return text.ToString();
