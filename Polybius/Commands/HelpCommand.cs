@@ -13,8 +13,10 @@ namespace Polybius.Commands {
 
 		private static readonly HelpTable dict_help = new () {
 			{ HelpCommand.main, help_general },
-			{ ServerCommands.blacklist, help_filterlist },
-			{ ServerCommands.whitelist, help_filterlist },
+			{ ServerCommands.blacklist        , help_filterlist  },
+			{ ServerCommands.whitelist        , help_filterlist  },
+			{ ServerCommands.bot_channel      , help_botchannel  },
+			{ ServerCommands.bot_channel_clear, help_botchannel  },
 		};
 
 		// The general handler function called from the main program.
@@ -83,6 +85,25 @@ namespace Polybius.Commands {
 			text.WriteLine();
 			text.WriteLine($"Use `{m} -view-filters` to view the server's whitelist and blacklist.");
 			text.WriteLine($"Also see: `{m} -help bot-channel`.");
+
+			text.Flush();
+			return text.ToString();
+		}
+
+		// The help command for configuring a bot channel for the server.
+		private static string help_botchannel(DiscordMessage msg) {
+			StringWriter text = new ();
+
+			text.WriteLine($"Use `{m} -bot-channel` to set a bot channel where Polybius will respond to searches.");
+			text.WriteLine($"`{m} -clear-bot-channel` will let Polybius respond anywhere.");
+			text.WriteLine();
+			text.WriteLine("You can specify channels with channel IDs / mention strings / channel names.");
+			text.WriteLine($"> `{m} -bot-channel 834981452453249054`");
+			text.WriteLine($"> `{m} -bot-channel #bots`");
+			text.WriteLine($"> `{m} -bot-channel bot-spam`");
+			text.WriteLine();
+			text.WriteLine($"Use `{m} -view-filters` to view the current bot channel.");
+			text.WriteLine($"Also see: `{m} -help blacklist` / `{m} -help whitelist`.");
 
 			text.Flush();
 			return text.ToString();
