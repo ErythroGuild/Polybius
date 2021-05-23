@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -18,6 +18,10 @@ namespace Polybius.Commands {
 			{ ServerCommands.bot_channel      , help_botchannel  },
 			{ ServerCommands.bot_channel_clear, help_botchannel  },
 			{ ServerCommands.view_filters     , help_viewfilters },
+			{ ServerCommands.set_token_L      , help_settoken    },
+			{ ServerCommands.set_token_R      , help_settoken    },
+			{ ServerCommands.set_split        , help_settoken    },
+			{ ServerCommands.view_tokens      , help_viewtokens  },
 		};
 
 		// The general handler function called from the main program.
@@ -117,6 +121,44 @@ namespace Polybius.Commands {
 
 			text.WriteLine($"Use `{m} -view-filters` to view the current blacklist / whitelist / bot channel.");
 			text.WriteLine($"Also see: `{m} -help blacklist`, `{m} -help whitelist`, and `{m} -help bot-channel`.");
+
+			text.Flush();
+			return text.ToString();
+		}
+
+		// The help command for modifying the search token format.
+		private static string help_settoken(DiscordMessage msg) {
+			StringWriter text = new ();
+			string tL = Settings.token_L_default;
+			string tR = Settings.token_R_default;
+			string tS = Settings.split_default;
+
+			text.WriteLine($"Use `{m} -set-token-L`, `{m} -set-token-R`, and `{m} -set-split` to change the search format.");
+			text.WriteLine($"You can use any (non-empty) string. The default settings are `{tL}query{tS}meta{tR}`.");
+			text.WriteLine();
+			text.WriteLine("Some examples:");
+			text.WriteLine($"> `{m} -set-token-L <<!`");
+			text.WriteLine($"> `{m} -set-token-R {tR}`");
+			text.WriteLine($"> `{m} -set-split &&`");
+			text.WriteLine();
+			text.WriteLine($"Use `{m} -view-tokens` to check the current search format.");
+
+			text.Flush();
+			return text.ToString();
+		}
+
+		// The help command for checking the current format for
+		// search tokens.
+		private static string help_viewtokens(DiscordMessage msg) {
+			StringWriter text = new ();
+			string tL = Settings.token_L_default;
+			string tR = Settings.token_R_default;
+			string tS = Settings.split_default;
+
+			text.WriteLine($"Use `{m} -view-tokens` to check the current search format.");
+			text.WriteLine($"The default settings are `{tL}query{tS}meta{tR}`.");
+			text.WriteLine();
+			text.WriteLine($"Use `{m} -set-token-L`, `{m} -set-token-R`, and `{m} -set-split` to change the current search format.");
 
 			text.Flush();
 			return text.ToString();
