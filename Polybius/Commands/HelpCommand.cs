@@ -12,7 +12,8 @@ namespace Polybius.Commands {
 		private static readonly string m = $"@{Program.polybius.CurrentUser.Username}";
 
 		private static readonly HelpTable dict_help = new () {
-			{ HelpCommand.main, help_general },
+			{ HelpCommand.main        , help_general },
+			{ HelpCommand.help_verbose, help_verbose },
 			{ ServerCommands.blacklist        , help_filterlist  },
 			{ ServerCommands.whitelist        , help_filterlist  },
 			{ ServerCommands.bot_channel      , help_botchannel  },
@@ -22,6 +23,13 @@ namespace Polybius.Commands {
 			{ ServerCommands.set_token_R      , help_settoken    },
 			{ ServerCommands.set_split        , help_settoken    },
 			{ ServerCommands.view_tokens      , help_viewtokens  },
+			{ ServerCommands.reset_server_settings, help_resetserver },
+		};
+
+		private static readonly Dictionary<string, CommandFunc> dict_extra = new () {
+			{ "more"   , help_verbose },
+			{ "v"      , help_verbose },
+			{ "verbose", help_verbose },
 		};
 
 		// The general handler function called from the main program.
@@ -32,6 +40,8 @@ namespace Polybius.Commands {
 			CommandFunc func = main;
 			if (Program.command_list.ContainsKey(arg)) {
 				func = Program.command_list[arg];
+			} else if (dict_extra.ContainsKey(arg)) {
+				func = dict_extra[arg];
 			}
 
 			// Fetch the associated help text and send as a reply.
@@ -66,10 +76,33 @@ namespace Polybius.Commands {
 			text.WriteLine();
 			text.WriteLine("Use the command name to get more help on commands, e.g.:");
 			text.WriteLine($"> `{m} -help view-tokens`");
+			text.WriteLine($"For even more information, use `{m} -help more`.");
 
 			text.Flush();
 			return text.ToString();
 		}
+
+		// A help command with a listing of all the available commands.
+		private static string help_verbose(DiscordMessage msg) {
+			StringWriter text = new ();
+
+			text.WriteLine("These are the available commands.");
+			text.WriteLine($"\u2022 `{m} -blacklist <channel>`, `{m} -whitelist <channel>`: Configure channel filters.");
+			text.WriteLine($"\u2022 `{m} -bot-channel <channel>`, `{m} -clear-bot-channel`: Configure a bot channel.");
+			text.WriteLine($"\u2022 `{m} -view-filters`: View current channel filters.");
+			text.WriteLine($"\u2022 `{m} -set-token-L`, `{m} -set-token-R`, `{m} -set-split`: Configure search format.");
+			text.WriteLine($"\u2022 `{m} -view-tokens`: View current search format.");
+			text.WriteLine($"\u2022 `{m} -reset-server-settings`: Reset to default settings.");
+			text.WriteLine();
+			text.WriteLine("Use the command name to get more help on commands, e.g.:");
+			text.WriteLine($"> `{m} -help view-tokens`");
+			text.WriteLine();
+			text.WriteLine($"Also see: `{m} -help`.");
+
+			text.Flush();
+			return text.ToString();
+		}
+		private static void help_verbose(string arg, DiscordMessage msg) { }
 
 		// The help command for configuring the blacklist & whitelist.
 		private static string help_filterlist(DiscordMessage msg) {
@@ -159,6 +192,22 @@ namespace Polybius.Commands {
 			text.WriteLine($"The default settings are `{tL}query{tS}meta{tR}`.");
 			text.WriteLine();
 			text.WriteLine($"Use `{m} -set-token-L`, `{m} -set-token-R`, and `{m} -set-split` to change the current search format.");
+
+			text.Flush();
+			return text.ToString();
+		}
+
+		// The help command for setting server settings back to default.
+		private static string help_resetserver(DiscordMessage msg) {
+			StringWriter text = new ();
+
+			text.WriteLine($"Use `{m} -reset-server-settings` to completely reset server settings.");
+			text.WriteLine("Polybius will act as if you had just added it to the server.");
+			text.WriteLine();
+			text.WriteLine("See also:");
+			text.WriteLine($"> `{m} -help blacklist`, `{m} -help whitelist`");
+			text.WriteLine($"> `{m} -help bot-channel`");
+			text.WriteLine($"> `{m} -help -set-token-L`, `{m} -help -set-token-R`, `{m} -help -set-split`");
 
 			text.Flush();
 			return text.ToString();
