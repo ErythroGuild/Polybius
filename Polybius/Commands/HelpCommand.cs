@@ -94,7 +94,7 @@ namespace Polybius.Commands {
 			text.WriteLine($"\u2022 `{m} -blacklist <channel>`, `{m} -whitelist <channel>`: Configure channel filters.");
 			text.WriteLine($"\u2022 `{m} -bot-channel <channel>`, `{m} -clear-bot-channel`: Configure a bot channel.");
 			text.WriteLine($"\u2022 `{m} -view-filters`: View current channel filters.");
-			text.WriteLine($"\u2022 `{m} -set-token-L`, `{m} -set-token-R`, `{m} -set-split`: Configure search format.");
+			text.WriteLine($"\u2022 `{m} -set-token-L <str>`, `{m} -set-token-R <str>`, `{m} -set-split <str>`: Configure search format.");
 			text.WriteLine($"\u2022 `{m} -view-tokens`: View current search format.");
 			text.WriteLine($"\u2022 `{m} -reset-server-settings`: Reset to default settings.");
 			text.WriteLine();
