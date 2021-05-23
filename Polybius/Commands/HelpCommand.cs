@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -9,6 +9,8 @@ namespace Polybius.Commands {
 	using HelpTable = Dictionary<Action<string, DiscordMessage>, Func<DiscordMessage, string>>;
 
 	class HelpCommand {
+		private static StringWriter text = new ();
+
 		private static readonly string m = $"@{Program.polybius.CurrentUser.Username}";
 
 		private static readonly HelpTable dict_help = new () {
@@ -42,7 +44,6 @@ namespace Polybius.Commands {
 		// The general help command, also given when an invalid argument
 		// is given. The only discoverable entry point to the bot.
 		private static string help_general(DiscordMessage msg) {
-			StringWriter text = new ();
 			string tL, tR, tS;
 
 			// Fetch customized tokens from guild settings.
@@ -73,8 +74,6 @@ namespace Polybius.Commands {
 
 		// The help command for configuring the blacklist & whitelist.
 		private static string help_filterlist(DiscordMessage msg) {
-			StringWriter text = new ();
-
 			text.WriteLine($"Use `{m} -blacklist` & `{m} -whitelist` to set up channel filters.");
 			text.WriteLine("Entering a channel already on a list will remove it from that list.");
 			text.WriteLine("You can specify channels with channel IDs / mention strings / channel names.");
@@ -97,8 +96,6 @@ namespace Polybius.Commands {
 
 		// The help command for configuring a bot channel for the server.
 		private static string help_botchannel(DiscordMessage msg) {
-			StringWriter text = new ();
-
 			text.WriteLine($"Use `{m} -bot-channel` to set a bot channel where Polybius will respond to searches.");
 			text.WriteLine($"`{m} -clear-bot-channel` will let Polybius respond anywhere.");
 			text.WriteLine();
@@ -117,8 +114,6 @@ namespace Polybius.Commands {
 		// The help command for viewing the blacklist & whitelist &
 		// bot channel.
 		private static string help_viewfilters(DiscordMessage msg) {
-			StringWriter text = new ();
-
 			text.WriteLine($"Use `{m} -view-filters` to view the current blacklist / whitelist / bot channel.");
 			text.WriteLine($"Also see: `{m} -help blacklist`, `{m} -help whitelist`, and `{m} -help bot-channel`.");
 
@@ -128,7 +123,6 @@ namespace Polybius.Commands {
 
 		// The help command for modifying the search token format.
 		private static string help_settoken(DiscordMessage msg) {
-			StringWriter text = new ();
 			string tL = Settings.token_L_default;
 			string tR = Settings.token_R_default;
 			string tS = Settings.split_default;
@@ -150,7 +144,6 @@ namespace Polybius.Commands {
 		// The help command for checking the current format for
 		// search tokens.
 		private static string help_viewtokens(DiscordMessage msg) {
-			StringWriter text = new ();
 			string tL = Settings.token_L_default;
 			string tR = Settings.token_R_default;
 			string tS = Settings.split_default;
