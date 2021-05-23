@@ -30,10 +30,14 @@ namespace Polybius.Commands {
 			{ "more"   , help_verbose },
 			{ "v"      , help_verbose },
 			{ "verbose", help_verbose },
+			{ "set-token" , ServerCommands.set_token_L },
+			{ "set-tokens", ServerCommands.set_token_L },
 		};
 
 		// The general handler function called from the main program.
 		public static void main(string arg, DiscordMessage msg) {
+			arg = arg.ToLower();
+
 			// Parse the intended argument with the same table used
 			// to parse the commands themselves.
 			// Default to "general" help text.
