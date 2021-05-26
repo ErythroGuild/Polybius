@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -230,7 +230,31 @@ namespace Polybius.Engines {
 		private static string javascript_to_html(string input) {
 			input = input.Replace(@"\""", "\"");
 			input = input.Replace(@"\/", "/");
-			input = input.Replace(@"&nbsp;", " ");
+			return input;
+		}
+
+		// Decode HTML entities into their display counterparts.
+		private static string html_decode(string input) {
+			Dictionary<string, string> dict_entities = new () {
+				{ @"&nbsp;" , " "      },
+				{ @"&quot;" , "\""     },
+				{ @"&ldquo;", "\u201C" },
+				{ @"&rdquo;", "\u201D" },
+				{ @"&apos;" , "'"      },
+				{ @"&lsquo;", "\u2018" },
+				{ @"&rsquo;", "\u2019" },
+				{ @"&lt;"   , "<"      },
+				{ @"&gt;"   , ">"      },
+				{ @"&amp;"  , "&"      },
+				{ @"&ndash;", "\u2013" },
+				{ @"&mdash;", "\u2014" },
+				{ @"&trade;", "\u2122" },
+			};
+
+			foreach (string entity in dict_entities.Keys) {
+				input = input.Replace(entity, dict_entities[entity]);
+			}
+
 			return input;
 		}
 
@@ -466,6 +490,7 @@ namespace Polybius.Engines {
 
 				// Fetch tooltip text from function delegates.
 				string tooltip = tooltips[type](page);
+				tooltip = html_decode(tooltip);
 				writer.WriteLine(tooltip);
 				writer.WriteLine();
 				writer.WriteLine($"*More info: [Wowhead]({data}) \u2022 [comments]({data}#comments)*");
