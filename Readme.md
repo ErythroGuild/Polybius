@@ -6,8 +6,7 @@ is modular and extensible to use different sites (as long as they're
 scrape-able).
 
 **To look up a query** (default settings), simply surround the query
-inside double-square brackets, `[[like so]]`. (There can be extra
-text outside the brackets.)
+inside double-square brackets, `[[like so]]`.
 
 ## Resources & Support
 
