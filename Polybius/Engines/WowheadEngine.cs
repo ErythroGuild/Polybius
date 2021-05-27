@@ -732,15 +732,22 @@ namespace Polybius.Engines {
 				string xpath_data =
 					@"//div[@id='main-contents']" +
 					@"/div[@class='text']" +
-					@"/preceding-sibling::script[2]";
-				HtmlNode node_data = page.SelectSingleNode(xpath_data);
-				string data = node_data.InnerText;
+					@"/preceding-sibling::script";
+				HtmlNodeCollection nodes_data = page.SelectNodes(xpath_data);
 
-				// Recover and sanitize tooltip HTML.
 				Regex regex_tooltip = new (
 					@"g_\w+\[\d+\]\.tooltip_enus = ""(?<tooltip>.+)"";",
 					RegexOptions.Compiled);
-				string tooltip = regex_tooltip.Match(data).Groups["tooltip"].Value;
+				string tooltip = "";
+				foreach (HtmlNode node_data in nodes_data) {
+					string data = node_data.InnerText;
+					if (regex_tooltip.IsMatch(data)) {
+						tooltip = regex_tooltip.Match(data).Groups["tooltip"].Value;
+						break;
+					}
+				}
+
+				// Recover and sanitize tooltip HTML.
 				tooltip = javascript_to_html(tooltip);
 
 				// Create a new HTML parser.
