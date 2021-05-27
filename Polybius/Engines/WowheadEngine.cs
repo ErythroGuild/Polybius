@@ -773,6 +773,13 @@ namespace Polybius.Engines {
 						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
 					}
 				}
+				// Add newlines between text/<div> interfaces.
+				nodes = node_text.SelectNodes(@"//text()/following-sibling::div");
+				if (nodes is not null) {
+					foreach (HtmlNode node in nodes) {
+						node.ParentNode.InsertBefore(dom.CreateTextNode("\n"), node);
+					}
+				}
 				// Add units to "money" nodes.
 				nodes = node_text.SelectNodes(@"//span[@class='moneygold']");
 				if (nodes is not null) {
