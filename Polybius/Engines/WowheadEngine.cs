@@ -45,10 +45,8 @@ namespace Polybius.Engines {
 			foreach (string tab in tabs) {
 				// Identify the type of results contained by the tab.
 				// Discard the data if the results aren't supported.
-				Regex regex_tab_id = new (
-					@"id: '(.+?)'",
-					RegexOptions.Compiled);
-				string tab_id = regex_tab_id.Match(tab).Groups[1].Value;
+				Regex regex_tab_id = new (@"id: '(?<id>.+?)'");
+				string tab_id = regex_tab_id.Match(tab).Groups["id"].Value;
 
 				Type? type = get_tab_type(tab_id);
 				if (type is null) {
@@ -57,10 +55,8 @@ namespace Polybius.Engines {
 
 				// Extract individual entries from the tab's data, parse
 				// through, and add to the total list of entries.
-				Regex regex_tab_data = new (
-					@"data: \[(.+)\]",
-					RegexOptions.Compiled);
-				string tab_data = regex_tab_data.Match(tab).Groups[1].Value;
+				Regex regex_tab_data = new (@"data: \[(?<data>.+)\]");
+				string tab_data = regex_tab_data.Match(tab).Groups["data"].Value;
 
 				List<string> entries = parse_tab_entries(tab_data);
 				List<SearchResult> tab_results = parse_results((Type)type, entries, token);
@@ -75,12 +71,10 @@ namespace Polybius.Engines {
 		private static List<SearchResult> result_from_redirect(HtmlNode doc, string url) {
 			// Find and parse the `g_pageInfo` string.
 			string pageinfo = parse_pageinfo(doc);
-			Regex regex = new(
-				@"""typeId"":(?<id>\d+),""name"":""(?<name>.+)""",
-				RegexOptions.Compiled);
-			GroupCollection match = regex.Match(pageinfo).Groups;
-			string id = match["id"].Value;
-			string name = match["name"].Value;
+			Regex regex_id = new (@"""typeId"":(?<id>\d+),");
+			Regex regex_name = new (@"""name"":""(?<name>.+)""");
+			string id = regex_id.Match(pageinfo).Groups["id"].Value;
+			string name = regex_name.Match(pageinfo).Groups["name"].Value;
 
 			// Do not return any results if the result type isn't one
 			// of the explicitly supported ones.
@@ -112,9 +106,7 @@ namespace Polybius.Engines {
 
 			// Go through all <script> nodes until we find one that sets
 			// the `g_pageInfo` variable.
-			Regex regex_pageinfo = new (
-				@"g_pageInfo = {(?<data>.+)};",
-				RegexOptions.Compiled);
+			Regex regex_pageinfo = new (@"g_pageInfo = {(?<data>.+)};");
 			foreach (HtmlNode node in nodes_data) {
 				string data = node.InnerText;
 				if (regex_pageinfo.IsMatch(data)) {
@@ -134,12 +126,8 @@ namespace Polybius.Engines {
 
 			// Go through all <script> nodes until we find one that sets
 			// the `g_pageInfo` variable, then extract the breadcrumb.
-			Regex regex_pageinfo = new (
-				@"g_pageInfo = {(?<data>.+)};",
-				RegexOptions.Compiled);
-			Regex regex_breadcrumb = new (
-				@"breadcrumb: \[(?<data>[\w\-"", ]+)\]",
-				RegexOptions.Compiled);
+			Regex regex_pageinfo = new (@"g_pageInfo = {(?<data>.+)};");
+			Regex regex_breadcrumb = new (@"breadcrumb: \[(?<data>[\w\-"", ]+)\]");
 			string breadcrumb = "";
 			foreach (HtmlNode node in nodes_data) {
 				string data = node.InnerText;
@@ -196,9 +184,7 @@ namespace Polybius.Engines {
 		// This is javascript, so it contains backslash escapes.
 		private static string get_tooltip(HtmlNode page) {
 			StringReader data = new (get_tooltip_raw(page));
-			Regex regex_tooltip = new (
-				@"g_\w+\[\d+\]\.tooltip_enus = ""(.+)"";",
-				RegexOptions.Compiled);
+			Regex regex_tooltip = new (@"g_\w+\[\d+\]\.tooltip_enus = ""(?<data>.+)"";");
 
 			// Only one entry should have tooltip data associated
 			// (the one corresponding to the current page).
@@ -262,12 +248,12 @@ namespace Polybius.Engines {
 		// (still formatted as javascript).
 		private static List<string> parse_tab_strings(string data) {
 			List<string> tabs = new ();
-			Regex regex_tabs = new (@"new Listview\((.*)\);", RegexOptions.Compiled);
+			Regex regex_tabs = new (@"new Listview\((?<tab>.*)\);");
 			MatchCollection matches = regex_tabs.Matches(data);
 			foreach (Match match in matches) {
 				// Regex captures are found in a 1-based array,
 				// [0] contains the match itself.
-				tabs.Add(match.Groups[1].Value);
+				tabs.Add(match.Groups["tab"].Value);
 			}
 			return tabs;
 		}
@@ -332,11 +318,11 @@ namespace Polybius.Engines {
 			List<SearchResult> entries = new ();
 			// Capture groups are accessed from a 1-based list,
 			// [0] contains the match string itself.
-			Regex regex_name = new (@"""name"":""(.+?)""", RegexOptions.Compiled);
-			Regex regex_id = new (@"""id"":(\d+)", RegexOptions.Compiled);
+			Regex regex_name = new (@"""name"":""(?<name>.+?)""");
+			Regex regex_id = new (@"""id"":(?<id>\d+)");
 
 			foreach (string entry in tab) {
-				string name = regex_name.Match(entry).Groups[1].Value;
+				string name = regex_name.Match(entry).Groups["name"].Value;
 
 				// Titles get special handling to trim the added "<Name>".
 				if (type == Type.Title) {
@@ -347,7 +333,7 @@ namespace Polybius.Engines {
 
 				// Collate matches into a list.
 				if (name.ToLower() == token.query.ToLower()) {
-					string id = regex_id.Match(entry).Groups[1].Value;
+					string id = regex_id.Match(entry).Groups["id"].Value;
 					string url = create_entry_url(type, id);
 					entries.Add(new WowheadSearchResult() {
 						is_exact_match = true,
@@ -523,9 +509,7 @@ namespace Polybius.Engines {
 				case Type.Profession:
 					data = get_tooltip_raw(page);
 
-					regex = new (
-						$@"""{id}"".*?""icon"":""(?<name>.+?)""",
-						RegexOptions.Compiled);
+					regex = new ($@"""{id}"".*?""icon"":""(?<name>.+?)""");
 					name = regex.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
@@ -537,9 +521,7 @@ namespace Polybius.Engines {
 					node_data = page.SelectSingleNode(xpath);
 					data = node_data.InnerText;
 
-					regex = new (
-						@"Icon\.create\(['""](?<name>\w+)['""]",
-						RegexOptions.Compiled);
+					regex = new (@"Icon\.create\(['""](?<name>\w+)['""]");
 					name = regex.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
@@ -552,9 +534,7 @@ namespace Polybius.Engines {
 					node_data = page.SelectSingleNode(xpath);
 					data = node_data.InnerText;
 
-					regex = new (
-						@"Icon\.create\(['""](?<name>\w+)['""]",
-						RegexOptions.Compiled);
+					regex = new (@"Icon\.create\(['""](?<name>\w+)['""]");
 					name = regex.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
@@ -567,9 +547,7 @@ namespace Polybius.Engines {
 					node_data = page.SelectSingleNode(xpath);
 					data = node_data.InnerText;
 
-					regex = new (
-						@"""icon"":""(?<name>\w+)""",
-						RegexOptions.Compiled);
+					regex = new (@"""icon"":""(?<name>\w+)""");
 					name = regex.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
@@ -581,9 +559,7 @@ namespace Polybius.Engines {
 					node_data = page.SelectSingleNode(xpath);
 					data = node_data.InnerText;
 
-					regex = new (
-						@"Icon\.create\(['""](?<name>\w+)['""]",
-						RegexOptions.Compiled);
+					regex = new (@"Icon\.create\(['""](?<name>\w+)['""]");
 					name = regex.Match(data).Groups["name"].Value;
 
 					return $@"https://wow.zamimg.com/images/wow/icons/large/{name}.jpg";
@@ -605,7 +581,7 @@ namespace Polybius.Engines {
 				// Find the main text node, and explicitly add newlines.
 				string xpath_text = @"/table[2]/tr/td";
 				HtmlNode node_text = dom.DocumentNode.SelectSingleNode(xpath_text);
-				HtmlNodeCollection nodes = null;
+				HtmlNodeCollection nodes;
 
 				// Replace <br> tags with newlines.
 				nodes = node_text.SelectNodes(@"//br");
@@ -735,9 +711,7 @@ namespace Polybius.Engines {
 					@"/preceding-sibling::script";
 				HtmlNodeCollection nodes_data = page.SelectNodes(xpath_data);
 
-				Regex regex_tooltip = new (
-					@"g_\w+\[\d+\]\.tooltip_enus = ""(?<tooltip>.+)"";",
-					RegexOptions.Compiled);
+				Regex regex_tooltip = new (@"g_\w+\[\d+\]\.tooltip_enus = ""(?<tooltip>.+)"";");
 				string tooltip = "";
 				foreach (HtmlNode node_data in nodes_data) {
 					string data = node_data.InnerText;
@@ -757,7 +731,7 @@ namespace Polybius.Engines {
 				// Find the main text node, and explicitly add newlines.
 				string xpath_text = @"/table[2]/tr/td";
 				HtmlNode node_text = dom.DocumentNode.SelectSingleNode(xpath_text);
-				HtmlNodeCollection nodes = null;
+				HtmlNodeCollection nodes;
 
 				// Replace <br> tags with newlines.
 				nodes = node_text.SelectNodes(@"//br");

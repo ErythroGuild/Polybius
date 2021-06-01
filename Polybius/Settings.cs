@@ -75,20 +75,21 @@ namespace Polybius {
 		}
 
 		public static Regex regex_query_default() {
-			return new Regex(
+			string regex =
 				$@"{Regex.Escape(token_L_default)}(?<{group_query}>.+?)" +
 				$@"(?:{Regex.Escape(split_default)}(?<{group_meta}>.+?))?" +
-				$@"{Regex.Escape(token_R_default)}", RegexOptions.IgnoreCase);
+				$@"{Regex.Escape(token_R_default)}";
+			return new Regex(regex, RegexOptions.IgnoreCase);
 		}
 
 		public Regex regex_query() {
 			// e.g.:
 			// \Q[[\E(?<query>.+?)(?:\Q|\E(?<meta>.+?))?\Q]]\E
-			string regex_str =
+			string regex =
 				$@"{Regex.Escape(token_L)}(?<{group_query}>.+?)" +
 				$@"(?:{Regex.Escape(split)}(?<{group_meta}>.+?))?" +
 				$@"{Regex.Escape(token_R)}";
-			return new Regex(regex_str, RegexOptions.Compiled);
+			return new Regex(regex, RegexOptions.IgnoreCase);
 		}
 
 		// Returns whether or not the bot is allowed to post in a channel,
