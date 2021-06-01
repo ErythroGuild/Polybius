@@ -26,10 +26,10 @@ namespace Polybius {
 			bot_queues_short = new (),
 			bot_queues_long = new ();
 
-#if DEBUG
-		private const string path_token = @"config/token_debug.txt";
-#else
+#if RELEASE
 		private const string path_token = @"config/token.txt";
+#else
+		private const string path_token = @"config/token_debug.txt";
 #endif
 		internal const string path_build = @"config/commit.txt";
 		internal const string path_version = @"config/tag.txt";
