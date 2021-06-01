@@ -228,7 +228,7 @@ namespace Polybius.Commands {
 
 			file = File.OpenText(Program.path_build);
 			string build = file.ReadLine();
-			build = build[..6];
+			build = build[..7];
 			file.Close();
 
 			file = File.OpenText(Program.path_version);
