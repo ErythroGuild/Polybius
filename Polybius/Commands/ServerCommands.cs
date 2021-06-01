@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 
 using DSharpPlus.Entities;
@@ -220,6 +221,21 @@ namespace Polybius.Commands {
 		}
 
 		public static void stats(string arg, DiscordMessage msg) {
+		}
+
+		public static void version(string arg, DiscordMessage msg) {
+			StreamReader file;
+
+			file = File.OpenText(Program.path_build);
+			string build = file.ReadLine();
+			build = build[..6];
+			file.Close();
+
+			file = File.OpenText(Program.path_version);
+			string version = file.ReadLine();
+			file.Close();
+
+			msg.RespondAsync($":information_source: **Polybius {version}** build `{build}`");
 		}
 
 		// If `msg.Channel.Guild` is `null`, return false, and reply to

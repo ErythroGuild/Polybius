@@ -31,6 +31,8 @@ namespace Polybius {
 #else
 		private const string path_token = @"config/token.txt";
 #endif
+		internal const string path_build = @"config/commit.txt";
+		internal const string path_version = @"config/tag.txt";
 
 		private const ulong id_user_admin = 165557736287764483;
 
@@ -69,6 +71,8 @@ namespace Polybius {
 			{ "view-token"       , ServerCommands.view_tokens       },
 			{ "reset-server-settings", ServerCommands.reset_server_settings },
 			{ "stats"            , ServerCommands.stats             },
+			{ "version"          , ServerCommands.version           },
+			{ "build"            , ServerCommands.version           },
 			{ "exit"           , AdminCommands.exit           },
 			{ "end"            , AdminCommands.exit           },
 			{ "kill"           , AdminCommands.exit           },
