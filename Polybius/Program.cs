@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -26,7 +26,11 @@ namespace Polybius {
 			bot_queues_short = new (),
 			bot_queues_long = new ();
 
+#if DEBUG
+		private const string path_token = @"config/token_debug.txt";
+#else
 		private const string path_token = @"config/token.txt";
+#endif
 
 		private const ulong id_user_admin = 165557736287764483;
 
