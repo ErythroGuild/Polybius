@@ -24,6 +24,7 @@ namespace Polybius.Commands {
 			{ ServerCommands.set_split        , help_settoken    },
 			{ ServerCommands.view_tokens      , help_viewtokens  },
 			{ ServerCommands.reset_server_settings, help_resetserver },
+			{ ServerCommands.version          , help_version },
 		};
 
 		private static readonly Dictionary<string, CommandFunc> dict_extra = new () {
@@ -97,6 +98,7 @@ namespace Polybius.Commands {
 			text.WriteLine($"\u2022 `{m} -set-token-L <str>`, `{m} -set-token-R <str>`, `{m} -set-split <str>`: Configure search format.");
 			text.WriteLine($"\u2022 `{m} -view-tokens`: View current search format.");
 			text.WriteLine($"\u2022 `{m} -reset-server-settings`: Reset to default settings.");
+			text.WriteLine($"\u2022 `{m} -version`: View the current release and build.");
 			text.WriteLine();
 			text.WriteLine("Use the command name to get more help on commands, e.g.:");
 			text.WriteLine($"> `{m} -help view-tokens`");
@@ -212,6 +214,17 @@ namespace Polybius.Commands {
 			text.WriteLine($"> `{m} -help blacklist`, `{m} -help whitelist`");
 			text.WriteLine($"> `{m} -help bot-channel`");
 			text.WriteLine($"> `{m} -help -set-token-L`, `{m} -help -set-token-R`, `{m} -help -set-split`");
+
+			text.Flush();
+			return text.ToString();
+		}
+
+		// The help command for viewing version text.
+		private static string help_version(DiscordMessage msg) {
+			StringWriter text = new ();
+
+			text.WriteLine($"Use `{m} -version` to view the current version (and build) of the bot.");
+			text.WriteLine($"This corresponds to the nearest release tag of the repo.");
 
 			text.Flush();
 			return text.ToString();

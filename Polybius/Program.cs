@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -26,7 +26,13 @@ namespace Polybius {
 			bot_queues_short = new (),
 			bot_queues_long = new ();
 
+#if RELEASE
 		private const string path_token = @"config/token.txt";
+#else
+		private const string path_token = @"config/token_debug.txt";
+#endif
+		internal const string path_build = @"config/commit.txt";
+		internal const string path_version = @"config/tag.txt";
 
 		private const ulong id_user_admin = 165557736287764483;
 
@@ -65,6 +71,8 @@ namespace Polybius {
 			{ "view-token"       , ServerCommands.view_tokens       },
 			{ "reset-server-settings", ServerCommands.reset_server_settings },
 			{ "stats"            , ServerCommands.stats             },
+			{ "version"          , ServerCommands.version           },
+			{ "build"            , ServerCommands.version           },
 			{ "exit"           , AdminCommands.exit           },
 			{ "end"            , AdminCommands.exit           },
 			{ "kill"           , AdminCommands.exit           },
@@ -117,8 +125,8 @@ namespace Polybius {
 			init_bot();
 
 			// Connected to discord servers (but not necessarily guilds yet!).
-			polybius.Ready += (polybius, e) =>
-				 _ = Task.Run(() => {
+			polybius.Ready += (polybius, e) => {
+				_ = Task.Run(() => {
 					DiscordActivity helptext =
 						new ("@Polybius -help", ActivityType.Watching);
 					polybius.UpdateStatusAsync(helptext);
@@ -127,9 +135,11 @@ namespace Polybius {
 					Console.WriteLine($"Connected to {polybius.Guilds.Count} server(s).");
 					Console.WriteLine("Monitoring messages...\n");
 				});
+				return Task.CompletedTask;
+			};
 
 			// Guild data has finished downloading.
-			polybius.GuildDownloadCompleted += (polybius, e) =>
+			polybius.GuildDownloadCompleted += (polybius, e) => {
 				_ = Task.Run(() => {
 					foreach (ulong id in e.Guilds.Keys) {
 						update_guild_name(e.Guilds[id]);
@@ -145,18 +155,22 @@ namespace Polybius {
 						settings.Add(id, settings_guild);
 					}
 				});
+				return Task.CompletedTask;
+			};
 
 			// Was added to a new guild.
-			polybius.GuildCreated += (polybius, e) =>
+			polybius.GuildCreated += (polybius, e) => {
 				_ = Task.Run(() => {
 					update_guild_name(e.Guild);
 					Settings settings_guild = new (e.Guild.Id);
 					settings_guild.save();
 					settings.Add(e.Guild.Id, settings_guild);
 				});
+				return Task.CompletedTask;
+			};
 
 			// Was removed from a guild.
-			polybius.GuildDeleted += (polybius, e) =>
+			polybius.GuildDeleted += (polybius, e) => {
 				_ = Task.Run(() => {
 					// Server data: `config/guild-{guild_id}/`
 					// `_server_name.txt`
@@ -175,15 +189,19 @@ namespace Polybius {
 						Directory.Delete(path_dir);
 					}
 				});
+				return Task.CompletedTask;
+			};
 
 			// Any monitored guild has updated their info.
-			polybius.GuildUpdated += (polybius, e) =>
+			polybius.GuildUpdated += (polybius, e) => {
 				_ = Task.Run(() => {
 					update_guild_name(e.GuildAfter);
 				});
+				return Task.CompletedTask;
+			};
 
 			// Received a message from any readable channel.
-			polybius.MessageCreated += (polybius, e) => 
+			polybius.MessageCreated += (polybius, e) => {
 				_ = Task.Run(async () => {
 					DiscordMessage msg = e.Message;
 
@@ -260,6 +278,8 @@ namespace Polybius {
 						}
 					}
 				});
+				return Task.CompletedTask;
+			};
 
 			await polybius.ConnectAsync();
 			await Task.Delay(-1);
