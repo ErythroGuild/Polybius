@@ -31,6 +31,9 @@
     <None Update="config\token.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="config\token_debug.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="db\easter_eggs.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
