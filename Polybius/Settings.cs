@@ -144,46 +144,52 @@ namespace Polybius {
 		}
 
 		public void save() {
-			// Directory must exist before attempting to create a file there.
-			Directory.CreateDirectory(path_save_base + id.ToString());
-			StreamWriter file_save = new (get_path_save());
+			try {
+				// Directory must exist before attempting to create a file there.
+				Directory.CreateDirectory(path_save_base + id.ToString());
+				StreamWriter file_save = new (get_path_save());
 
-			// Convenience functions for writing to the file.
-			void SaveVal(string key, string val) {
-				file_save.WriteLine(key + delim_key + val);
+				// Convenience functions for writing to the file.
+				void SaveVal(string key, string val) {
+					file_save.WriteLine(key + delim_key + val);
+				}
+				void SaveVals(string key, List<string> vals) {
+					string val = "";
+					foreach (string entry in vals)
+						{ val += entry + delim_entry; }
+					// trim the trailing delimiter
+					if (val.EndsWith(delim_entry))
+						{ val = val[..^delim_entry.Length]; }
+					SaveVal(key, val);
+				}
+
+				SaveVal(key_log_stats, do_log_stats.ToString());
+				SaveVal(key_token_L, token_L);
+				SaveVal(key_token_R, token_R);
+				SaveVal(key_split, split);
+
+				// `null` is a special case that is easily disambiguated on read,
+				// since otherwise a `ulong` will only have digits after conversion.
+				string str_ch_bot = ch_bot?.ToString() ?? str_null;
+				SaveVal(key_ch_bot, str_ch_bot);
+
+				List<string> vals_whitelist = new ();
+				foreach (ulong ch in ch_whitelist)
+					{ vals_whitelist.Add(ch.ToString()); }
+				SaveVals(key_ch_whitelist, vals_whitelist);
+
+				List<string> vals_blacklist = new ();
+				foreach (ulong ch in ch_blacklist)
+					{ vals_blacklist.Add(ch.ToString()); }
+				SaveVals(key_ch_blacklist, vals_blacklist);
+
+				// Flush/finalize the save file.
+				file_save.Close();
+
+			} catch {
+				Console.WriteLine("Could not create save file.");
+				Console.WriteLine("> " + get_path_save());
 			}
-			void SaveVals(string key, List<string> vals) {
-				string val = "";
-				foreach (string entry in vals)
-					{ val += entry + delim_entry; }
-				// trim the trailing delimiter
-				if (val.EndsWith(delim_entry))
-					{ val = val[..^delim_entry.Length]; }
-				SaveVal(key, val);
-			}
-
-			SaveVal(key_log_stats, do_log_stats.ToString());
-			SaveVal(key_token_L, token_L);
-			SaveVal(key_token_R, token_R);
-			SaveVal(key_split, split);
-
-			// `null` is a special case that is easily disambiguated on read,
-			// since otherwise a `ulong` will only have digits after conversion.
-			string str_ch_bot = ch_bot?.ToString() ?? str_null;
-			SaveVal(key_ch_bot, str_ch_bot);
-
-			List<string> vals_whitelist = new ();
-			foreach (ulong ch in ch_whitelist)
-				{ vals_whitelist.Add(ch.ToString()); }
-			SaveVals(key_ch_whitelist, vals_whitelist);
-
-			List<string> vals_blacklist = new ();
-			foreach (ulong ch in ch_blacklist)
-				{ vals_blacklist.Add(ch.ToString()); }
-			SaveVals(key_ch_blacklist, vals_blacklist);
-
-			// Flush/finalize the save file.
-			file_save.Close();
 		}
 
 		public static Settings load(ulong id) {

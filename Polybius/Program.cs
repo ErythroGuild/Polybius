@@ -312,11 +312,17 @@ namespace Polybius {
 			// Update `config/guild-{guild_id}/_server_name.txt`.
 			string file_path =
 				$"{Settings.path_save_base}{guild.Id}/{Settings.path_name_file}";
-			// directory must exist before creating a file there.
-			Directory.CreateDirectory(Settings.path_save_base + guild.Id.ToString());
-			StreamWriter file = new (file_path);
-			file.WriteLine(guild.Name);
-			file.Close();
+
+			try {
+				// directory must exist before creating a file there.
+				Directory.CreateDirectory(Settings.path_save_base + guild.Id.ToString());
+				StreamWriter file = new(file_path);
+				file.WriteLine(guild.Name);
+				file.Close();
+			} catch {
+				Console.WriteLine($"Could not update guild name for {guild.Name}.");
+				Console.WriteLine("> (could not create save file)");
+			}
 		}
 
 		// Initialize rate-limiting queues if the request is from a new
