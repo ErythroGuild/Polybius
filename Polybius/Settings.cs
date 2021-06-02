@@ -197,43 +197,49 @@ namespace Polybius {
 				string key = line_split[0];
 				string val = line_split[1];
 
-				switch (key) {
-				case key_log_stats:
-					settings._do_log_stats = Convert.ToBoolean(val);
-					break;
-				case key_token_L:
-					settings._token_L = val;
-					break;
-				case key_token_R:
-					settings._token_R = val;
-					break;
-				case key_split:
-					settings._split = val;
-					break;
+				try {
+					switch (key) {
+					case key_log_stats:
+						settings._do_log_stats = Convert.ToBoolean(val);
+						break;
+					case key_token_L:
+						settings._token_L = val;
+						break;
+					case key_token_R:
+						settings._token_R = val;
+						break;
+					case key_split:
+						settings._split = val;
+						break;
 
-				case key_ch_bot:
-					if (val == str_null)
-						{ settings._ch_bot = null; }
-					else
-						{ settings._ch_bot = Convert.ToUInt64(val); }
-					break;
+					case key_ch_bot:
+						if (val == str_null)
+							{ settings._ch_bot = null; }
+						else
+							{ settings._ch_bot = Convert.ToUInt64(val); }
+						break;
 
-				case key_ch_whitelist:
-					string[] vals_whitelist = val.Split(delim_entry);
-					if (vals_whitelist[0] != "") {
-						foreach (string entry in vals_whitelist) {
-							settings._ch_whitelist.Add(Convert.ToUInt64(entry));
+					case key_ch_whitelist:
+						string[] vals_whitelist = val.Split(delim_entry);
+						if (vals_whitelist[0] != "") {
+							foreach (string entry in vals_whitelist) {
+								settings._ch_whitelist.Add(Convert.ToUInt64(entry));
+							}
 						}
-					}
-					break;
-				case key_ch_blacklist:
-					string[] vals_blacklist = val.Split(delim_entry);
-					if (vals_blacklist[0] != "") {
-						foreach (string entry in vals_blacklist) {
-							settings._ch_blacklist.Add(Convert.ToUInt64(entry));
+						break;
+					case key_ch_blacklist:
+						string[] vals_blacklist = val.Split(delim_entry);
+						if (vals_blacklist[0] != "") {
+							foreach (string entry in vals_blacklist) {
+								settings._ch_blacklist.Add(Convert.ToUInt64(entry));
+							}
 						}
+						break;
 					}
-					break;
+				} catch (FormatException) {
+					Console.WriteLine($"Could not convert key value: {val}");
+				} catch (OverflowException) {
+					Console.WriteLine($"Could not convert key value: {val}");
 				}
 			}
 
