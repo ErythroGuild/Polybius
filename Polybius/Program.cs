@@ -209,6 +209,10 @@ namespace Polybius {
 					if (msg.Author == polybius.CurrentUser)
 						{ return; }
 
+					// Never respond to DMs!
+					if (e.Guild is null)
+						{ return; }
+
 					// Rate-limit responses to other bots.
 					if (msg.Author.IsBot) {
 						ChannelBotPair ch_bot_id = new (msg.ChannelId, msg.Author.Id);
@@ -231,7 +235,7 @@ namespace Polybius {
 					if (msg_text.StartsWith(mention_str)) {
 						msg_text = msg_text[mention_str.Length..];
 						msg_text = msg_text.TrimStart();
-						process_commands(msg_text, msg);
+						await process_commands(msg_text, msg);
 					}
 				
 					// Check for queries and exit if none are found.
@@ -383,7 +387,7 @@ namespace Polybius {
 		}
 
 		// Process and call the response methods to any commands.
-		static void process_commands(string input, DiscordMessage msg) {
+		static async Task process_commands(string input, DiscordMessage msg) {
 			if (input.StartsWith("-")) {
 				input = input[1..];
 				string[] msg_split = input.Split(' ', 2);
@@ -397,7 +401,8 @@ namespace Polybius {
 					CommandFunc command = command_list[cmd];
 					// Check if server permissions are needed (and met).
 					if (dict_permission.ContainsKey(command)) {
-						DiscordMember author = (DiscordMember)msg.Author;
+						DiscordGuild guild = msg.Channel.Guild;
+						DiscordMember author = await guild.GetMemberAsync(msg.Author.Id);
 						Permissions permissions = author.PermissionsIn(msg.Channel);
 						Permissions permission_req = dict_permission[command];
 						if (!permissions.HasPermission(permission_req)) {
