@@ -179,14 +179,19 @@ namespace Polybius {
 						e.Guild.Id.ToString();
 					string path_name = $"{path_dir}/{Settings.path_name_file}";
 					string path_save = $"{path_dir}/{Settings.path_save_file}";
-					if (File.Exists(path_name)) {
-						File.Delete(path_name);
-					}
-					if (File.Exists(path_save)) {
-						File.Delete(path_save);
-					}
-					if (Directory.Exists(path_dir)) {
-						Directory.Delete(path_dir);
+
+					try {
+						if (File.Exists(path_name)) {
+							File.Delete(path_name);
+						}
+						if (File.Exists(path_save)) {
+							File.Delete(path_save);
+						}
+						if (Directory.Exists(path_dir)) {
+							Directory.Delete(path_dir);
+						}
+					} catch (IOException) {
+						Console.WriteLine($"Could not delete settings for removed guild: {e.Guild.Id}");
 					}
 				});
 				return Task.CompletedTask;
