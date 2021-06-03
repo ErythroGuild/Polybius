@@ -179,14 +179,19 @@ namespace Polybius {
 						e.Guild.Id.ToString();
 					string path_name = $"{path_dir}/{Settings.path_name_file}";
 					string path_save = $"{path_dir}/{Settings.path_save_file}";
-					if (File.Exists(path_name)) {
-						File.Delete(path_name);
-					}
-					if (File.Exists(path_save)) {
-						File.Delete(path_save);
-					}
-					if (Directory.Exists(path_dir)) {
-						Directory.Delete(path_dir);
+
+					try {
+						if (File.Exists(path_name)) {
+							File.Delete(path_name);
+						}
+						if (File.Exists(path_save)) {
+							File.Delete(path_save);
+						}
+						if (Directory.Exists(path_dir)) {
+							Directory.Delete(path_dir);
+						}
+					} catch (IOException) {
+						Console.WriteLine($"Could not delete settings for removed guild: {e.Guild.Id}");
 					}
 				});
 				return Task.CompletedTask;
@@ -207,6 +212,10 @@ namespace Polybius {
 
 					// Never respond to self!
 					if (msg.Author == polybius.CurrentUser)
+						{ return; }
+
+					// Never respond to DMs!
+					if (e.Guild is null)
 						{ return; }
 
 					// Rate-limit responses to other bots.
@@ -231,7 +240,7 @@ namespace Polybius {
 					if (msg_text.StartsWith(mention_str)) {
 						msg_text = msg_text[mention_str.Length..];
 						msg_text = msg_text.TrimStart();
-						process_commands(msg_text, msg);
+						await process_commands(msg_text, msg);
 					}
 				
 					// Check for queries and exit if none are found.
@@ -308,11 +317,17 @@ namespace Polybius {
 			// Update `config/guild-{guild_id}/_server_name.txt`.
 			string file_path =
 				$"{Settings.path_save_base}{guild.Id}/{Settings.path_name_file}";
-			// directory must exist before creating a file there.
-			Directory.CreateDirectory(Settings.path_save_base + guild.Id.ToString());
-			StreamWriter file = new (file_path);
-			file.WriteLine(guild.Name);
-			file.Close();
+
+			try {
+				// directory must exist before creating a file there.
+				Directory.CreateDirectory(Settings.path_save_base + guild.Id.ToString());
+				StreamWriter file = new(file_path);
+				file.WriteLine(guild.Name);
+				file.Close();
+			} catch {
+				Console.WriteLine($"Could not update guild name for {guild.Name}.");
+				Console.WriteLine("> (could not create save file)");
+			}
 		}
 
 		// Initialize rate-limiting queues if the request is from a new
@@ -383,7 +398,7 @@ namespace Polybius {
 		}
 
 		// Process and call the response methods to any commands.
-		static void process_commands(string input, DiscordMessage msg) {
+		static async Task process_commands(string input, DiscordMessage msg) {
 			if (input.StartsWith("-")) {
 				input = input[1..];
 				string[] msg_split = input.Split(' ', 2);
@@ -397,7 +412,8 @@ namespace Polybius {
 					CommandFunc command = command_list[cmd];
 					// Check if server permissions are needed (and met).
 					if (dict_permission.ContainsKey(command)) {
-						DiscordMember author = (DiscordMember)msg.Author;
+						DiscordGuild guild = msg.Channel.Guild;
+						DiscordMember author = await guild.GetMemberAsync(msg.Author.Id);
 						Permissions permissions = author.PermissionsIn(msg.Channel);
 						Permissions permission_req = dict_permission[command];
 						if (!permissions.HasPermission(permission_req)) {

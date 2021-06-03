@@ -144,46 +144,52 @@ namespace Polybius {
 		}
 
 		public void save() {
-			// Directory must exist before attempting to create a file there.
-			Directory.CreateDirectory(path_save_base + id.ToString());
-			StreamWriter file_save = new (get_path_save());
+			try {
+				// Directory must exist before attempting to create a file there.
+				Directory.CreateDirectory(path_save_base + id.ToString());
+				StreamWriter file_save = new (get_path_save());
 
-			// Convenience functions for writing to the file.
-			void SaveVal(string key, string val) {
-				file_save.WriteLine(key + delim_key + val);
+				// Convenience functions for writing to the file.
+				void SaveVal(string key, string val) {
+					file_save.WriteLine(key + delim_key + val);
+				}
+				void SaveVals(string key, List<string> vals) {
+					string val = "";
+					foreach (string entry in vals)
+						{ val += entry + delim_entry; }
+					// trim the trailing delimiter
+					if (val.EndsWith(delim_entry))
+						{ val = val[..^delim_entry.Length]; }
+					SaveVal(key, val);
+				}
+
+				SaveVal(key_log_stats, do_log_stats.ToString());
+				SaveVal(key_token_L, token_L);
+				SaveVal(key_token_R, token_R);
+				SaveVal(key_split, split);
+
+				// `null` is a special case that is easily disambiguated on read,
+				// since otherwise a `ulong` will only have digits after conversion.
+				string str_ch_bot = ch_bot?.ToString() ?? str_null;
+				SaveVal(key_ch_bot, str_ch_bot);
+
+				List<string> vals_whitelist = new ();
+				foreach (ulong ch in ch_whitelist)
+					{ vals_whitelist.Add(ch.ToString()); }
+				SaveVals(key_ch_whitelist, vals_whitelist);
+
+				List<string> vals_blacklist = new ();
+				foreach (ulong ch in ch_blacklist)
+					{ vals_blacklist.Add(ch.ToString()); }
+				SaveVals(key_ch_blacklist, vals_blacklist);
+
+				// Flush/finalize the save file.
+				file_save.Close();
+
+			} catch {
+				Console.WriteLine("Could not create save file.");
+				Console.WriteLine("> " + get_path_save());
 			}
-			void SaveVals(string key, List<string> vals) {
-				string val = "";
-				foreach (string entry in vals)
-					{ val += entry + delim_entry; }
-				// trim the trailing delimiter
-				if (val.EndsWith(delim_entry))
-					{ val = val[..^delim_entry.Length]; }
-				SaveVal(key, val);
-			}
-
-			SaveVal(key_log_stats, do_log_stats.ToString());
-			SaveVal(key_token_L, token_L);
-			SaveVal(key_token_R, token_R);
-			SaveVal(key_split, split);
-
-			// `null` is a special case that is easily disambiguated on read,
-			// since otherwise a `ulong` will only have digits after conversion.
-			string str_ch_bot = ch_bot?.ToString() ?? str_null;
-			SaveVal(key_ch_bot, str_ch_bot);
-
-			List<string> vals_whitelist = new ();
-			foreach (ulong ch in ch_whitelist)
-				{ vals_whitelist.Add(ch.ToString()); }
-			SaveVals(key_ch_whitelist, vals_whitelist);
-
-			List<string> vals_blacklist = new ();
-			foreach (ulong ch in ch_blacklist)
-				{ vals_blacklist.Add(ch.ToString()); }
-			SaveVals(key_ch_blacklist, vals_blacklist);
-
-			// Flush/finalize the save file.
-			file_save.Close();
 		}
 
 		public static Settings load(ulong id) {
@@ -197,43 +203,49 @@ namespace Polybius {
 				string key = line_split[0];
 				string val = line_split[1];
 
-				switch (key) {
-				case key_log_stats:
-					settings._do_log_stats = Convert.ToBoolean(val);
-					break;
-				case key_token_L:
-					settings._token_L = val;
-					break;
-				case key_token_R:
-					settings._token_R = val;
-					break;
-				case key_split:
-					settings._split = val;
-					break;
+				try {
+					switch (key) {
+					case key_log_stats:
+						settings._do_log_stats = Convert.ToBoolean(val);
+						break;
+					case key_token_L:
+						settings._token_L = val;
+						break;
+					case key_token_R:
+						settings._token_R = val;
+						break;
+					case key_split:
+						settings._split = val;
+						break;
 
-				case key_ch_bot:
-					if (val == str_null)
-						{ settings._ch_bot = null; }
-					else
-						{ settings._ch_bot = Convert.ToUInt64(val); }
-					break;
+					case key_ch_bot:
+						if (val == str_null)
+							{ settings._ch_bot = null; }
+						else
+							{ settings._ch_bot = Convert.ToUInt64(val); }
+						break;
 
-				case key_ch_whitelist:
-					string[] vals_whitelist = val.Split(delim_entry);
-					if (vals_whitelist[0] != "") {
-						foreach (string entry in vals_whitelist) {
-							settings._ch_whitelist.Add(Convert.ToUInt64(entry));
+					case key_ch_whitelist:
+						string[] vals_whitelist = val.Split(delim_entry);
+						if (vals_whitelist[0] != "") {
+							foreach (string entry in vals_whitelist) {
+								settings._ch_whitelist.Add(Convert.ToUInt64(entry));
+							}
 						}
-					}
-					break;
-				case key_ch_blacklist:
-					string[] vals_blacklist = val.Split(delim_entry);
-					if (vals_blacklist[0] != "") {
-						foreach (string entry in vals_blacklist) {
-							settings._ch_blacklist.Add(Convert.ToUInt64(entry));
+						break;
+					case key_ch_blacklist:
+						string[] vals_blacklist = val.Split(delim_entry);
+						if (vals_blacklist[0] != "") {
+							foreach (string entry in vals_blacklist) {
+								settings._ch_blacklist.Add(Convert.ToUInt64(entry));
+							}
 						}
+						break;
 					}
-					break;
+				} catch (FormatException) {
+					Console.WriteLine($"Could not convert key value: {val}");
+				} catch (OverflowException) {
+					Console.WriteLine($"Could not convert key value: {val}");
 				}
 			}
 
