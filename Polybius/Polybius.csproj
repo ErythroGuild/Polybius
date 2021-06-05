@@ -6,6 +6,7 @@
     <StartupObject>Polybius.Program</StartupObject>
     <Authors>Ernest Gu</Authors>
     <Company>Erythro</Company>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -47,6 +48,10 @@
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Command="powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File version.ps1" />
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="if $(ConfigurationName) == Release powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File publish.ps1" />
   </Target>
 
 </Project>
