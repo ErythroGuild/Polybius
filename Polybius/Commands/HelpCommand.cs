@@ -9,9 +9,9 @@ namespace Polybius.Commands {
 	using HelpTable = Dictionary<Action<string, DiscordMessage>, Func<DiscordMessage, string>>;
 
 	class HelpCommand {
-		private static readonly string m = $"@{Program.polybius.CurrentUser.Username}";
+		static readonly string m = $"@{Program.polybius.CurrentUser.Username}";
 
-		private static readonly HelpTable dict_help = new () {
+		static readonly HelpTable dict_help = new () {
 			{ HelpCommand.main        , help_general },
 			{ HelpCommand.help_verbose, help_verbose },
 			{ ServerCommands.blacklist        , help_filterlist  },
@@ -27,7 +27,7 @@ namespace Polybius.Commands {
 			{ ServerCommands.version          , help_version },
 		};
 
-		private static readonly Dictionary<string, CommandFunc> dict_extra = new () {
+		static readonly Dictionary<string, CommandFunc> dict_extra = new () {
 			{ "more"   , help_verbose },
 			{ "v"      , help_verbose },
 			{ "verbose", help_verbose },
@@ -56,7 +56,7 @@ namespace Polybius.Commands {
 
 		// The general help command, also given when an invalid argument
 		// is given. The only discoverable entry point to the bot.
-		private static string help_general(DiscordMessage msg) {
+		static string help_general(DiscordMessage msg) {
 			StringWriter text = new ();
 			string tL, tR, tS;
 
@@ -88,7 +88,7 @@ namespace Polybius.Commands {
 		}
 
 		// A help command with a listing of all the available commands.
-		private static string help_verbose(DiscordMessage msg) {
+		static string help_verbose(DiscordMessage msg) {
 			StringWriter text = new ();
 
 			text.WriteLine("These are the available commands.");
@@ -108,10 +108,10 @@ namespace Polybius.Commands {
 			text.Flush();
 			return text.ToString();
 		}
-		private static void help_verbose(string arg, DiscordMessage msg) { }
+		static void help_verbose(string arg, DiscordMessage msg) { }
 
 		// The help command for configuring the blacklist & whitelist.
-		private static string help_filterlist(DiscordMessage msg) {
+		static string help_filterlist(DiscordMessage msg) {
 			StringWriter text = new ();
 
 			text.WriteLine($"Use `{m} -blacklist` & `{m} -whitelist` to set up channel filters.");
@@ -135,7 +135,7 @@ namespace Polybius.Commands {
 		}
 
 		// The help command for configuring a bot channel for the server.
-		private static string help_botchannel(DiscordMessage msg) {
+		static string help_botchannel(DiscordMessage msg) {
 			StringWriter text = new ();
 
 			text.WriteLine($"Use `{m} -bot-channel` to set a bot channel where Polybius will respond to searches.");
@@ -155,7 +155,7 @@ namespace Polybius.Commands {
 
 		// The help command for viewing the blacklist & whitelist &
 		// bot channel.
-		private static string help_viewfilters(DiscordMessage msg) {
+		static string help_viewfilters(DiscordMessage msg) {
 			StringWriter text = new ();
 
 			text.WriteLine($"Use `{m} -view-filters` to view the current blacklist / whitelist / bot channel.");
@@ -166,7 +166,7 @@ namespace Polybius.Commands {
 		}
 
 		// The help command for modifying the search token format.
-		private static string help_settoken(DiscordMessage msg) {
+		static string help_settoken(DiscordMessage msg) {
 			StringWriter text = new ();
 			string tL = Settings.token_L_default;
 			string tR = Settings.token_R_default;
@@ -188,7 +188,7 @@ namespace Polybius.Commands {
 
 		// The help command for checking the current format for
 		// search tokens.
-		private static string help_viewtokens(DiscordMessage msg) {
+		static string help_viewtokens(DiscordMessage msg) {
 			StringWriter text = new ();
 			string tL = Settings.token_L_default;
 			string tR = Settings.token_R_default;
@@ -204,7 +204,7 @@ namespace Polybius.Commands {
 		}
 
 		// The help command for setting server settings back to default.
-		private static string help_resetserver(DiscordMessage msg) {
+		static string help_resetserver(DiscordMessage msg) {
 			StringWriter text = new ();
 
 			text.WriteLine($"Use `{m} -reset-server-settings` to completely reset server settings.");
@@ -220,7 +220,7 @@ namespace Polybius.Commands {
 		}
 
 		// The help command for viewing version text.
-		private static string help_version(DiscordMessage msg) {
+		static string help_version(DiscordMessage msg) {
 			StringWriter text = new ();
 
 			text.WriteLine($"Use `{m} -version` to view the current version (and build) of the bot.");

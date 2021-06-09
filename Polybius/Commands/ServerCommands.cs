@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -240,7 +240,7 @@ namespace Polybius.Commands {
 
 		// If `msg.Channel.Guild` is `null`, return false, and reply to
 		// the original message explaining.
-		private static bool check_guild_exists(DiscordMessage msg) {
+		static bool check_guild_exists(DiscordMessage msg) {
 			if (msg.Channel.GuildId is null) {
 				string str_no_server =
 					"Could not find a Discord server to configure. " + 
@@ -254,7 +254,7 @@ namespace Polybius.Commands {
 		// Creates a new default Settings file for the given server if
 		// one doesn't exist already.
 		// Returns true when a new file was created, false otherwise.
-		private static bool try_init_settings(ulong guild_id) {
+		static bool try_init_settings(ulong guild_id) {
 			if (Program.settings[guild_id] is null) {
 				Program.settings.Add(guild_id, new (guild_id));
 				return true;
@@ -263,7 +263,7 @@ namespace Polybius.Commands {
 			}
 		}
 
-		private static ulong? extract_channel_id(string text, DiscordMessage msg) {
+		static ulong? extract_channel_id(string text, DiscordMessage msg) {
 			if (msg.MentionedChannels.Count > 0) {
 				return msg.MentionedChannels[0].Id;
 			} else if (Regex.IsMatch(text, @"\d+")) {
@@ -278,7 +278,7 @@ namespace Polybius.Commands {
 			return null;
 		}
 
-		private static IEnumerable<DiscordChannel> get_guild_channels(DiscordMessage msg) {
+		static IEnumerable<DiscordChannel> get_guild_channels(DiscordMessage msg) {
 			return msg.Channel.Guild.Channels.Values;
 		}
 	}
