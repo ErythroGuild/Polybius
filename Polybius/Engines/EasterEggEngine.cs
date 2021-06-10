@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 
 using DSharpPlus.Entities;
@@ -13,7 +13,7 @@ namespace Polybius.Engines {
 
 			StreamReader db = new (path_db);
 			while (!db.EndOfStream) {
-				string line = db.ReadLine();
+				string line = db.ReadLine() ?? "";
 				string[] split = line.Split(delim, 2);
 				string name = split[0], data = split[1];
 				data = decode_newlines(data);

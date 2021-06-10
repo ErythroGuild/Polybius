@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -11,7 +11,7 @@ namespace Polybius.Commands {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-			ulong guild_id = (ulong)msg.Channel.GuildId;
+			ulong guild_id = (ulong)msg.Channel.GuildId!;
 			try_init_settings(guild_id);
 
 			ulong? ch_to_add = extract_channel_id(arg, msg);
@@ -42,7 +42,7 @@ namespace Polybius.Commands {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-			ulong guild_id = (ulong)msg.Channel.GuildId;
+			ulong guild_id = (ulong)msg.Channel.GuildId!;
 			try_init_settings(guild_id);
 
 			ulong? ch_to_add = extract_channel_id(arg, msg);
@@ -73,7 +73,7 @@ namespace Polybius.Commands {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-			ulong guild_id = (ulong)msg.Channel.GuildId;
+			ulong guild_id = (ulong)msg.Channel.GuildId!;
 			try_init_settings(guild_id);
 
 			ulong? ch_bot = extract_channel_id(arg, msg);
@@ -93,11 +93,11 @@ namespace Polybius.Commands {
 			}
 		}
 
-		public static void bot_channel_clear(string arg, DiscordMessage msg) {
+		public static void bot_channel_clear(string _1, DiscordMessage msg) {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-			ulong guild_id = (ulong)msg.Channel.GuildId;
+			ulong guild_id = (ulong)msg.Channel.GuildId!;
 			try_init_settings(guild_id);
 
 			ulong? ch_bot_old = Program.settings[guild_id].ch_bot;
@@ -116,7 +116,7 @@ namespace Polybius.Commands {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-			ulong guild_id = (ulong)msg.Channel.GuildId;
+			ulong guild_id = (ulong)msg.Channel.GuildId!;
 			try_init_settings(guild_id);
 			Settings settings = Program.settings[guild_id];
 
@@ -157,7 +157,7 @@ namespace Polybius.Commands {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-			ulong guild_id = (ulong)msg.Channel.GuildId;
+			ulong guild_id = (ulong)msg.Channel.GuildId!;
 			try_init_settings(guild_id);
 
 			if (arg == "") {
@@ -174,7 +174,7 @@ namespace Polybius.Commands {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-			ulong guild_id = (ulong)msg.Channel.GuildId;
+			ulong guild_id = (ulong)msg.Channel.GuildId!;
 			try_init_settings(guild_id);
 
 			if (arg == "") {
@@ -191,7 +191,7 @@ namespace Polybius.Commands {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-			ulong guild_id = (ulong)msg.Channel.GuildId;
+			ulong guild_id = (ulong)msg.Channel.GuildId!;
 			try_init_settings(guild_id);
 
 			if (arg == "") {
@@ -204,35 +204,40 @@ namespace Polybius.Commands {
 			_ = msg.RespondAsync($":white_check_mark: Splitter token changed from `{token_old}` to `{arg}`.");
 		}
 
-		public static void view_tokens(string arg, DiscordMessage msg) {
+		public static void view_tokens(string _1, DiscordMessage msg) {
 			bool guild_exists = check_guild_exists(msg);
 			if (!guild_exists)
 				{ return; }
-			ulong guild_id = (ulong)msg.Channel.GuildId;
+			ulong guild_id = (ulong)msg.Channel.GuildId!;
 			try_init_settings(guild_id);
 			Settings settings = Program.settings[guild_id];
 
 			_ = msg.RespondAsync($":information_source: Search token format:\n`{settings.token_L}`query`{settings.split}`meta`{settings.token_R}`");
 		}
 
-		public static void reset_server_settings(string arg, DiscordMessage msg) {
-			_ = new Settings((ulong)msg.Channel.GuildId);
+		public static void reset_server_settings(string _1, DiscordMessage msg) {
+			bool guild_exists = check_guild_exists(msg);
+			if (!guild_exists)
+				{ return; }
+			_ = new Settings((ulong)msg.Channel.GuildId!);
 			msg.RespondAsync(":white_check_mark: All server settings have been reset to their defaults.\n:information_source: Server statistics have not been reset.");
 		}
 
 		public static void stats(string arg, DiscordMessage msg) {
 		}
 
-		public static void version(string arg, DiscordMessage msg) {
+		public static void version(string _1, DiscordMessage msg) {
 			StreamReader file;
 
 			file = File.OpenText(Program.path_build);
-			string build = file.ReadLine();
-			build = build[..7];
+			string build = file.ReadLine() ?? "";
+			if (build.Length > 7) {
+				build = build[..7];
+			}
 			file.Close();
 
 			file = File.OpenText(Program.path_version);
-			string version = file.ReadLine();
+			string version = file.ReadLine() ?? "";
 			file.Close();
 
 			msg.RespondAsync($":information_source: **Polybius {version}** build `{build}`");

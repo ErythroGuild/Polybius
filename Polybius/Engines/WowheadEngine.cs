@@ -70,7 +70,10 @@ namespace Polybius.Engines {
 		// into a `WowheadSearchResult`.
 		static List<SearchResult> result_from_redirect(HtmlNode doc, string url) {
 			// Find and parse the `g_pageInfo` string.
-			string pageinfo = parse_pageinfo(doc);
+			string? pageinfo = parse_pageinfo(doc);
+			if (pageinfo is null) {
+				return new List<SearchResult>();
+			}
 			Regex regex_id = new (@"""typeId"":(?<id>\d+),");
 			Regex regex_name = new (@"""name"":""(?<name>.+)""");
 			string id = regex_id.Match(pageinfo).Groups["id"].Value;
@@ -85,7 +88,7 @@ namespace Polybius.Engines {
 
 			// Construct and return a list of results consisting of
 			// the sole matching result.
-			WowheadSearchResult result = new() {
+			WowheadSearchResult result = new () {
 				is_exact_match = true,
 				similarity = 1.0F,
 				name = name,
@@ -98,7 +101,7 @@ namespace Polybius.Engines {
 
 		// Extract the `var g_pageInfo` variable from the <script> CDATA
 		// embedded within the HTML document.
-		static string parse_pageinfo(HtmlNode page) {
+		static string? parse_pageinfo(HtmlNode page) {
 			string xpath_data =
 				@"//div[@id='infobox-original-position']" +
 				@"/following-sibling::script";
@@ -182,14 +185,14 @@ namespace Polybius.Engines {
 
 		// Returns the tooltip data that is processed into HTML.
 		// This is javascript, so it contains backslash escapes.
-		static string get_tooltip(HtmlNode page) {
+		static string? get_tooltip(HtmlNode page) {
 			StringReader data = new (get_tooltip_raw(page));
 			Regex regex_tooltip = new (@"g_\w+\[\d+\]\.tooltip_enus = ""(?<data>.+)"";");
 
 			// Only one entry should have tooltip data associated
 			// (the one corresponding to the current page).
 			while (data.Peek() != -1) {
-				string line = data.ReadLine();
+				string line = data.ReadLine() ?? "";
 				Match match = regex_tooltip.Match(line);
 				if (match != Match.Empty) {
 					return match.Groups[1].Value;
@@ -351,42 +354,29 @@ namespace Polybius.Engines {
 		// Create the link to the actual Wowhead entry page, from
 		// entries parsed from the result list.
 		static string create_entry_url(Type type, string id) {
-			switch (type) {
-			case Type.Spell:
-			case Type.CovenantSpell:
-			case Type.Talent:
-			case Type.PvpTalent:
-			case Type.Memory:
-			case Type.Conduit:
-			case Type.SoulbindTalent:
-			case Type.AnimaPower:
-			case Type.AzeriteTrait:
-			case Type.Mount:
-			case Type.Profession:
-				return $@"https://www.wowhead.com/spell={id}";
-			case Type.Essence:
-				return $@"https://www.wowhead.com/azerite-essence/{id}";
-			case Type.Affix:
-				return $@"https://www.wowhead.com/affix={id}";
-			case Type.BattlePet:
-				return $@"https://www.wowhead.com/npc={id}";
-			case Type.BattlePetSpell:
-				return $@"https://www.wowhead.com/pet-ability={id}";
-			case Type.Item:
-				return $@"https://www.wowhead.com/item={id}";
-			case Type.Achievement:
-				return $@"https://www.wowhead.com/achievement={id}";
-			case Type.Quest:
-				return $@"https://www.wowhead.com/quest={id}";
-			case Type.Currency:
-				return $@"https://www.wowhead.com/currency={id}";
-			case Type.Faction:
-				return $@"https://www.wowhead.com/faction={id}";
-			case Type.Title:
-				return $@"https://www.wowhead.com/title={id}";
-			default:
-				return null;
-			}
+			return type switch {
+				Type.Spell or
+				Type.CovenantSpell or
+				Type.Talent or
+				Type.PvpTalent or
+				Type.Memory or
+				Type.Conduit or
+				Type.SoulbindTalent or
+				Type.AnimaPower or
+				Type.AzeriteTrait or
+				Type.Mount or
+				Type.Profession => $@"https://www.wowhead.com/spell={id}",
+				Type.Essence => $@"https://www.wowhead.com/azerite-essence/{id}",
+				Type.Affix => $@"https://www.wowhead.com/affix={id}",
+				Type.BattlePet => $@"https://www.wowhead.com/npc={id}",
+				Type.BattlePetSpell => $@"https://www.wowhead.com/pet-ability={id}",
+				Type.Item => $@"https://www.wowhead.com/item={id}",
+				Type.Achievement => $@"https://www.wowhead.com/achievement={id}",
+				Type.Quest => $@"https://www.wowhead.com/quest={id}",
+				Type.Currency => $@"https://www.wowhead.com/currency={id}",
+				Type.Faction => $@"https://www.wowhead.com/faction={id}",
+				Type.Title => $@"https://www.wowhead.com/title={id}",
+			};
 		}
 
 		// Return the name of the spell (as shown in the header) at
@@ -424,7 +414,7 @@ namespace Polybius.Engines {
 			};
 
 			public Type type;
-			public string id;
+			public string id = "";
 
 			public override DiscordMessageBuilder get_display() {
 				DiscordEmbed embed = new DiscordEmbedBuilder()
@@ -438,7 +428,7 @@ namespace Polybius.Engines {
 				HtmlNode page = doc.DocumentNode;
 
 				// Parse the icon and add it to the embed if it exists.
-				string url_icon = get_icon(page);
+				string? url_icon = get_icon(page);
 				if (url_icon is not null) {
 					embed = new DiscordEmbedBuilder(embed)
 						.WithThumbnail(url_icon);
@@ -490,7 +480,7 @@ namespace Polybius.Engines {
 			}
 
 			// Returns the thumbnail icon if one exists, or null otherwise.
-			string get_icon(HtmlNode page) {
+			string? get_icon(HtmlNode page) {
 				string xpath, data, name;
 				Regex regex;
 				HtmlNode node_data;
@@ -572,7 +562,9 @@ namespace Polybius.Engines {
 			}
 
 			string text_spell(HtmlNode page) {
-				string tooltip = get_tooltip(page);
+				string? tooltip = get_tooltip(page);
+				if (tooltip is null)
+					{ return ""; }
 				tooltip = javascript_to_html(tooltip);
 
 				HtmlDocument dom = new ();

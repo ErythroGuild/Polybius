@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -199,7 +199,8 @@ namespace Polybius {
 
 			// Read in the file line-by-line.
 			while (!file_save.EndOfStream) {
-				string line = file_save.ReadLine();
+				// not at EndOfStream, line must be non-null
+				string line = file_save.ReadLine()!;
 				string[] line_split = line.Split(delim_key, 2);
 				string key = line_split[0];
 				string val = line_split[1];

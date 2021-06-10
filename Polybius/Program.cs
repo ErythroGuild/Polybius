@@ -279,7 +279,8 @@ namespace Polybius {
 
 					// Indicate to the user that their query has been received
 					// and is currently being processed.
-					await msg.Channel.TriggerTypingAsync();
+					if (msg.Channel is not null)
+						{ await msg.Channel.TriggerTypingAsync(); }
 
 					foreach (QueryMetaPair query in queries) {
 						Console.WriteLine($"\nQuery parsed: {query.query}, {query.meta}");
@@ -372,7 +373,7 @@ namespace Polybius {
 
 		// Returns false if the channel should not be responded to,
 		// either in the channel itself or a bot channel.
-		static bool is_channel_tracked(DiscordChannel channel) {
+		public static bool is_channel_tracked(DiscordChannel channel) {
 			// Track non-server channels.
 			if (channel.GuildId is null) {
 				return true;
@@ -440,7 +441,7 @@ namespace Polybius {
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
-		static List<QueryMetaPair> extract_queries(string msg, ulong? guild_id) {
+		public static List<QueryMetaPair> extract_queries(string msg, ulong? guild_id) {
 			Regex regex_query;
 			if (guild_id is null) {
 				regex_query = Settings.regex_query_default();
@@ -462,7 +463,7 @@ namespace Polybius {
 		}
 
 		// Determine the correct channel to reply in.
-		static async Task<DiscordChannel> find_reply_channel(DiscordMessage msg) {
+		internal static async Task<DiscordChannel> find_reply_channel(DiscordMessage msg) {
 			if (msg.Channel.GuildId is null)
 				{ return msg.Channel; }
 
