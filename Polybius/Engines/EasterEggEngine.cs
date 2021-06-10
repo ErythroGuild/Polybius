@@ -5,15 +5,15 @@ using DSharpPlus.Entities;
 
 namespace Polybius.Engines {
 	class EasterEggEngine : IEngine {
-		private const string path_db = @"db/easter_eggs.txt";
-		private const string delim = @"=";
+		const string path_db = @"db/easter_eggs.txt";
+		const string delim = @"=";
 
 		public static List<SearchResult> search(Program.QueryMetaPair token) {
 			List<SearchResult> results = new ();
 
 			StreamReader db = new (path_db);
 			while (!db.EndOfStream) {
-				string line = db.ReadLine();
+				string line = db.ReadLine() ?? "";
 				string[] split = line.Split(delim, 2);
 				string name = split[0], data = split[1];
 				data = decode_newlines(data);
@@ -32,7 +32,7 @@ namespace Polybius.Engines {
 			return results;
 		}
 
-		private static string decode_newlines(string str) {
+		static string decode_newlines(string str) {
 			return str.Replace(@"\n", "\n");
 		}
 

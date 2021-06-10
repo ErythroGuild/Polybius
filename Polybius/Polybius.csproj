@@ -6,6 +6,8 @@
     <StartupObject>Polybius.Program</StartupObject>
     <Authors>Ernest Gu</Authors>
     <Company>Erythro</Company>
+    <Nullable>enable</Nullable>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -23,7 +25,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.1.0-nightly-00870" />
+    <PackageReference Include="DSharpPlus" Version="4.1.0-nightly-00879" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.33" />
   </ItemGroup>
 

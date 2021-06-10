@@ -6,14 +6,14 @@ using System.Text.RegularExpressions;
 using DSharpPlus.Entities;
 using HtmlAgilityPack;
 
-using Type = Polybius.Engines.WowheadEngine.WowheadSearchResult.Type;
-
 namespace Polybius.Engines {
-	class WowheadEngine : IEngine {
-		private static HtmlWeb http = new ();
+	using Type = WowheadEngine.WowheadSearchResult.Type;
 
-		private const string url_search = @"https://www.wowhead.com/search?q=";
-		private const int embed_color = 0xA71A19;
+	class WowheadEngine : IEngine {
+		static readonly HtmlWeb http = new ();
+
+		const string url_search = @"https://www.wowhead.com/search?q=";
+		const int embed_color = 0xA71A19;
 
 		public static List<SearchResult> search(Program.QueryMetaPair token) {
 			HtmlDocument doc = http.Load(url_search + token.query);
@@ -68,9 +68,12 @@ namespace Polybius.Engines {
 
 		// Parse a page (redirected immediately from the search page)
 		// into a `WowheadSearchResult`.
-		private static List<SearchResult> result_from_redirect(HtmlNode doc, string url) {
+		static List<SearchResult> result_from_redirect(HtmlNode doc, string url) {
 			// Find and parse the `g_pageInfo` string.
-			string pageinfo = parse_pageinfo(doc);
+			string? pageinfo = parse_pageinfo(doc);
+			if (pageinfo is null) {
+				return new List<SearchResult>();
+			}
 			Regex regex_id = new (@"""typeId"":(?<id>\d+),");
 			Regex regex_name = new (@"""name"":""(?<name>.+)""");
 			string id = regex_id.Match(pageinfo).Groups["id"].Value;
@@ -85,7 +88,7 @@ namespace Polybius.Engines {
 
 			// Construct and return a list of results consisting of
 			// the sole matching result.
-			WowheadSearchResult result = new() {
+			WowheadSearchResult result = new () {
 				is_exact_match = true,
 				similarity = 1.0F,
 				name = name,
@@ -98,7 +101,7 @@ namespace Polybius.Engines {
 
 		// Extract the `var g_pageInfo` variable from the <script> CDATA
 		// embedded within the HTML document.
-		private static string parse_pageinfo(HtmlNode page) {
+		static string? parse_pageinfo(HtmlNode page) {
 			string xpath_data =
 				@"//div[@id='infobox-original-position']" +
 				@"/following-sibling::script";
@@ -118,7 +121,7 @@ namespace Polybius.Engines {
 		}
 
 		// Use the breadcrumb string to classify the page's Type.
-		private static Type? type_from_breadcrumb(HtmlNode page) {
+		static Type? type_from_breadcrumb(HtmlNode page) {
 			string xpath_data =
 				@"//div[@id='infobox-original-position']" +
 				@"/following-sibling::script";
@@ -182,14 +185,14 @@ namespace Polybius.Engines {
 
 		// Returns the tooltip data that is processed into HTML.
 		// This is javascript, so it contains backslash escapes.
-		private static string get_tooltip(HtmlNode page) {
+		static string? get_tooltip(HtmlNode page) {
 			StringReader data = new (get_tooltip_raw(page));
 			Regex regex_tooltip = new (@"g_\w+\[\d+\]\.tooltip_enus = ""(?<data>.+)"";");
 
 			// Only one entry should have tooltip data associated
 			// (the one corresponding to the current page).
 			while (data.Peek() != -1) {
-				string line = data.ReadLine();
+				string line = data.ReadLine() ?? "";
 				Match match = regex_tooltip.Match(line);
 				if (match != Match.Empty) {
 					return match.Groups[1].Value;
@@ -202,7 +205,7 @@ namespace Polybius.Engines {
 		
 		// Returns the inner text of the entire <script> tag enclosing
 		// the tooltip data itself.
-		private static string get_tooltip_raw(HtmlNode page) {
+		static string get_tooltip_raw(HtmlNode page) {
 			string xpath_data =
 				@"//div[@id='main-contents']" +
 				@"/div[@class='text']" +
@@ -213,14 +216,14 @@ namespace Polybius.Engines {
 
 		// Replace escaped quotes and backslashes with their actual
 		// representations.
-		private static string javascript_to_html(string input) {
+		static string javascript_to_html(string input) {
 			input = input.Replace(@"\""", "\"");
 			input = input.Replace(@"\/", "/");
 			return input;
 		}
 
 		// Decode HTML entities into their display counterparts.
-		private static string html_decode(string input) {
+		static string html_decode(string input) {
 			Dictionary<string, string> dict_entities = new () {
 				{ @"&nbsp;" , " "      },
 				{ @"&quot;" , "\""     },
@@ -246,7 +249,7 @@ namespace Polybius.Engines {
 
 		// Parse <script> data into a list of search result tabs
 		// (still formatted as javascript).
-		private static List<string> parse_tab_strings(string data) {
+		static List<string> parse_tab_strings(string data) {
 			List<string> tabs = new ();
 			Regex regex_tabs = new (@"new Listview\((?<tab>.*)\);");
 			MatchCollection matches = regex_tabs.Matches(data);
@@ -260,7 +263,7 @@ namespace Polybius.Engines {
 
 		// Classify the `Type` of the tab from the tab-id.
 		// Returns `null` if the tab type isn't supported.
-		private static Type? get_tab_type(string tab_id) {
+		static Type? get_tab_type(string tab_id) {
 			Dictionary<string, Type> dict = new () {
 				{ "abilities"         , Type.Spell         },
 				{ "specializations"   , Type.Spell         },
@@ -300,7 +303,7 @@ namespace Polybius.Engines {
 		}
 
 		// Parses the list of entries in a tab into individual entries.
-		private static List<string> parse_tab_entries(string data) {
+		static List<string> parse_tab_entries(string data) {
 			// Split multiple elements onto different lines.
 			data = data.Replace("},{", "}\n{");
 			string[] data_split = data.Split('\n');
@@ -314,7 +317,7 @@ namespace Polybius.Engines {
 
 		// Takes an entire tab worth of results (and the category of the tab),
 		// and returns a parsed list of (`Wowhead`)`SearchResult`s.
-		private static List<SearchResult> parse_results(Type type, List<string> tab, Program.QueryMetaPair token) {
+		static List<SearchResult> parse_results(Type type, List<string> tab, Program.QueryMetaPair token) {
 			List<SearchResult> entries = new ();
 			// Capture groups are accessed from a 1-based list,
 			// [0] contains the match string itself.
@@ -350,48 +353,35 @@ namespace Polybius.Engines {
 
 		// Create the link to the actual Wowhead entry page, from
 		// entries parsed from the result list.
-		private static string create_entry_url(Type type, string id) {
-			switch (type) {
-			case Type.Spell:
-			case Type.CovenantSpell:
-			case Type.Talent:
-			case Type.PvpTalent:
-			case Type.Memory:
-			case Type.Conduit:
-			case Type.SoulbindTalent:
-			case Type.AnimaPower:
-			case Type.AzeriteTrait:
-			case Type.Mount:
-			case Type.Profession:
-				return $@"https://www.wowhead.com/spell={id}";
-			case Type.Essence:
-				return $@"https://www.wowhead.com/azerite-essence/{id}";
-			case Type.Affix:
-				return $@"https://www.wowhead.com/affix={id}";
-			case Type.BattlePet:
-				return $@"https://www.wowhead.com/npc={id}";
-			case Type.BattlePetSpell:
-				return $@"https://www.wowhead.com/pet-ability={id}";
-			case Type.Item:
-				return $@"https://www.wowhead.com/item={id}";
-			case Type.Achievement:
-				return $@"https://www.wowhead.com/achievement={id}";
-			case Type.Quest:
-				return $@"https://www.wowhead.com/quest={id}";
-			case Type.Currency:
-				return $@"https://www.wowhead.com/currency={id}";
-			case Type.Faction:
-				return $@"https://www.wowhead.com/faction={id}";
-			case Type.Title:
-				return $@"https://www.wowhead.com/title={id}";
-			default:
-				return null;
-			}
+		static string create_entry_url(Type type, string id) {
+			return type switch {
+				Type.Spell or
+				Type.CovenantSpell or
+				Type.Talent or
+				Type.PvpTalent or
+				Type.Memory or
+				Type.Conduit or
+				Type.SoulbindTalent or
+				Type.AnimaPower or
+				Type.AzeriteTrait or
+				Type.Mount or
+				Type.Profession => $@"https://www.wowhead.com/spell={id}",
+				Type.Essence => $@"https://www.wowhead.com/azerite-essence/{id}",
+				Type.Affix => $@"https://www.wowhead.com/affix={id}",
+				Type.BattlePet => $@"https://www.wowhead.com/npc={id}",
+				Type.BattlePetSpell => $@"https://www.wowhead.com/pet-ability={id}",
+				Type.Item => $@"https://www.wowhead.com/item={id}",
+				Type.Achievement => $@"https://www.wowhead.com/achievement={id}",
+				Type.Quest => $@"https://www.wowhead.com/quest={id}",
+				Type.Currency => $@"https://www.wowhead.com/currency={id}",
+				Type.Faction => $@"https://www.wowhead.com/faction={id}",
+				Type.Title => $@"https://www.wowhead.com/title={id}",
+			};
 		}
 
 		// Return the name of the spell (as shown in the header) at
 		// the provided link.
-		private static string get_spell_name(string url) {
+		static string get_spell_name(string url) {
 			HtmlDocument doc = http.Load(url);
 			HtmlNode page = doc.DocumentNode;
 
@@ -424,7 +414,7 @@ namespace Polybius.Engines {
 			};
 
 			public Type type;
-			public string id;
+			public string id = "";
 
 			public override DiscordMessageBuilder get_display() {
 				DiscordEmbed embed = new DiscordEmbedBuilder()
@@ -438,7 +428,7 @@ namespace Polybius.Engines {
 				HtmlNode page = doc.DocumentNode;
 
 				// Parse the icon and add it to the embed if it exists.
-				string url_icon = get_icon(page);
+				string? url_icon = get_icon(page);
 				if (url_icon is not null) {
 					embed = new DiscordEmbedBuilder(embed)
 						.WithThumbnail(url_icon);
@@ -490,7 +480,7 @@ namespace Polybius.Engines {
 			}
 
 			// Returns the thumbnail icon if one exists, or null otherwise.
-			private string get_icon(HtmlNode page) {
+			string? get_icon(HtmlNode page) {
 				string xpath, data, name;
 				Regex regex;
 				HtmlNode node_data;
@@ -571,8 +561,10 @@ namespace Polybius.Engines {
 				}
 			}
 
-			private string text_spell(HtmlNode page) {
-				string tooltip = get_tooltip(page);
+			string text_spell(HtmlNode page) {
+				string? tooltip = get_tooltip(page);
+				if (tooltip is null)
+					{ return ""; }
 				tooltip = javascript_to_html(tooltip);
 
 				HtmlDocument dom = new ();
@@ -623,7 +615,7 @@ namespace Polybius.Engines {
 				return tooltip.TrimEnd();
 			}
 
-			private string text_essence(HtmlNode page) {
+			string text_essence(HtmlNode page) {
 				string xpath_data =
 					@"//div[@id='article-all']" +
 					@"/following-sibling::script[2]";
@@ -687,14 +679,14 @@ namespace Polybius.Engines {
 				return writer.ToString().TrimEnd();
 			}
 
-			private string text_affix(HtmlNode page) {
+			string text_affix(HtmlNode page) {
 				string xpath_data = @"//div[@id='article-all']";
 				HtmlNode node_data = page.SelectSingleNode(xpath_data);
 				node_data = node_data.PreviousSibling;
 				return node_data.InnerText.Trim();
 			}
 
-			private string text_battlepet(HtmlNode page) {
+			string text_battlepet(HtmlNode page) {
 				string xpath_data =
 						@"//div[@id='main-contents']" +
 						@"/div[@class='text']" +
@@ -703,7 +695,7 @@ namespace Polybius.Engines {
 				return node_data.InnerText.Trim();
 			}
 
-			private string text_item(HtmlNode page) {
+			string text_item(HtmlNode page) {
 				// Find tooltip data.
 				string xpath_data =
 					@"//div[@id='main-contents']" +
@@ -787,7 +779,7 @@ namespace Polybius.Engines {
 				return tooltip.TrimEnd();
 			}
 
-			private string text_achievement(HtmlNode page) {
+			string text_achievement(HtmlNode page) {
 				string xpath_data =
 					@"//div[@id='main-contents']" +
 					@"/div[@class='text']" +
@@ -806,7 +798,7 @@ namespace Polybius.Engines {
 				return "";
 			}
 
-			private string text_quest(HtmlNode page) {
+			string text_quest(HtmlNode page) {
 				string xpath_data =
 					@"//div[@id='main-contents']" +
 					@"/div[@class='text']" +
@@ -826,7 +818,7 @@ namespace Polybius.Engines {
 				return "";
 			}
 
-			private string text_currency(HtmlNode page) {
+			string text_currency(HtmlNode page) {
 				string xpath_data =
 					@"//div[@id='main-contents']" +
 					@"/div[@class='text']" +
@@ -835,11 +827,11 @@ namespace Polybius.Engines {
 				return node_data.InnerText.Trim();
 			}
 
-			private string text_faction(HtmlNode page) {
+			string text_faction(HtmlNode page) {
 				return "**Faction**";
 			}
 
-			private string text_title(HtmlNode page) {
+			string text_title(HtmlNode page) {
 				return "**Title**";
 			}
 		}

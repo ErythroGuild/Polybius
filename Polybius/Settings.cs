@@ -7,7 +7,8 @@ namespace Polybius {
 	class Settings {
 		// Regex group names.
 		public const string
-			group_query = "query", group_meta = "meta";
+			group_query = "query",
+			group_meta = "meta";
 
 		// Default regex tokens.
 		public const string
@@ -22,10 +23,10 @@ namespace Polybius {
 			path_name_file = "_server_name.txt";
 
 		// Private backing fields for all settings.
-		private bool _do_log_stats;
-		private string _token_L, _token_R, _split;
-		private ulong? _ch_bot;
-		private HashSet<ulong> _ch_whitelist, _ch_blacklist;
+		bool _do_log_stats;
+		string _token_L, _token_R, _split;
+		ulong? _ch_bot;
+		HashSet<ulong> _ch_whitelist, _ch_blacklist;
 
 		// Hiding setter since guild_id should be immutable;
 		// all other property setters also save the entire object.
@@ -120,9 +121,9 @@ namespace Polybius {
 		}
 
 		// These variables are only used to save/load settings.
-		private const string delim_key = "=", delim_entry = ",";
-		private const string str_null = "null";
-		private const string
+		const string delim_key = "=", delim_entry = ",";
+		const string str_null = "null";
+		const string
 			key_log_stats	= "do_log_stats",
 			key_token_L		= "token_L",
 			key_token_R		= "token_R",
@@ -131,11 +132,11 @@ namespace Polybius {
 			key_ch_whitelist = "ch_whitelist",
 			key_ch_blacklist = "ch_blacklist";
 
-		private static string get_path_save(ulong id) {
+		static string get_path_save(ulong id) {
 			return $"{path_save_base}{id}/{path_save_file}";
 		}
 
-		private string get_path_save() {
+		string get_path_save() {
 			return get_path_save(id);
 		}
 
@@ -198,7 +199,8 @@ namespace Polybius {
 
 			// Read in the file line-by-line.
 			while (!file_save.EndOfStream) {
-				string line = file_save.ReadLine();
+				// not at EndOfStream, line must be non-null
+				string line = file_save.ReadLine()!;
 				string[] line_split = line.Split(delim_key, 2);
 				string key = line_split[0];
 				string val = line_split[1];

@@ -17,34 +17,38 @@ namespace Polybius {
 
 	class Program {
 		public record QueryMetaPair(string query, string meta);
-		private record ChannelBotPair(ulong ch, ulong bot);
+		record ChannelBotPair(ulong ch, ulong bot);
 
-		internal static DiscordClient polybius;
+		// Discord client objects.
+		internal static readonly DiscordClient polybius;
+		internal static readonly Dictionary<ulong, Settings> settings = new ();
 
-		internal static Dictionary<ulong, Settings> settings = new ();
-		private static Dictionary<ChannelBotPair, Queue<DateTime>>
-			bot_queues_short = new (),
-			bot_queues_long = new ();
-
-#if RELEASE
-		private const string path_token = @"config/token.txt";
-#else
-		private const string path_token = @"config/token_debug.txt";
-#endif
+		// File paths for config files.
 		internal const string path_build = @"config/commit.txt";
 		internal const string path_version = @"config/tag.txt";
+#if RELEASE
+		const string path_token = @"config/token.txt";
+#else
+		const string path_token = @"config/token_debug.txt";
+#endif
 
-		private const ulong id_user_admin = 165557736287764483;
+		// User ID of the account to accept admin commands from.
+		internal const ulong id_user_admin = 165557736287764483;
 
 		// Rate limits on responses to bot messages.
-		private static readonly TimeSpan
+		static readonly Dictionary<ChannelBotPair, Queue<DateTime>>
+			bot_queues_short = new (),
+			bot_queues_long = new ();
+		internal static readonly TimeSpan
 			ratelimit_short = TimeSpan.FromSeconds(10),
 			ratelimit_long = TimeSpan.FromMinutes(1);
-		private const int rate_short = 5, rate_long = 8;
+		internal const int
+			rate_short = 5,
+			rate_long = 8;
 
 		// Per message caps for queries and results.
 		internal const int cap_queries = 5;
-		private const int cap_results = 3;
+		internal const int cap_results = 3;
 
 		internal static readonly CommandTable command_list = new () {
 			{ "help", HelpCommand.main },
@@ -86,7 +90,7 @@ namespace Polybius {
 			{ "global_stats"   , AdminCommands.global_stats   },
 		};
 
-		private static readonly PermissionTable dict_permission = new () {
+		static readonly PermissionTable dict_permission = new () {
 			{ ServerCommands.blacklist        , Permissions.ManageGuild    },
 			{ ServerCommands.whitelist        , Permissions.ManageGuild    },
 			{ ServerCommands.bot_channel      , Permissions.ManageGuild    },
@@ -100,7 +104,7 @@ namespace Polybius {
 			{ ServerCommands.stats            , Permissions.ViewAuditLog   },
 		};
 
-		private static readonly List<CommandFunc> dict_admin = new () {
+		static readonly List<CommandFunc> dict_admin = new () {
 			AdminCommands.exit,
 			AdminCommands.restart,
 			AdminCommands.suspend_db,
@@ -108,6 +112,27 @@ namespace Polybius {
 			AdminCommands.refresh_guilds,
 			AdminCommands.global_stats,
 		};
+
+		static Program() {
+			Console.WriteLine("Initializing Polybius...");
+			Console.WriteLine("Reading auth token...");
+
+			string bot_token = "";
+			using (StreamReader token = File.OpenText(path_token)) {
+				bot_token = token.ReadLine() ?? "";
+			}
+			if (bot_token == "") {
+				Console.WriteLine("Could not find auth token.");
+				throw new FormatException($"Could not find auth token at {path_token}.");
+			} else {
+				Console.WriteLine("Auth token found.");
+			}
+
+			polybius = new DiscordClient(new DiscordConfiguration {
+				Token = bot_token,
+				TokenType = TokenType.Bot
+			});
+		}
 
 		static void Main() {
 			const string title_ascii =
@@ -122,8 +147,6 @@ namespace Polybius {
 		}
 
 		static async Task MainAsync() {
-			init_bot();
-
 			// Connected to discord servers (but not necessarily guilds yet!).
 			polybius.Ready += (polybius, e) => {
 				_ = Task.Run(() => {
@@ -256,7 +279,8 @@ namespace Polybius {
 
 					// Indicate to the user that their query has been received
 					// and is currently being processed.
-					await msg.Channel.TriggerTypingAsync();
+					if (msg.Channel is not null)
+						{ await msg.Channel.TriggerTypingAsync(); }
 
 					foreach (QueryMetaPair query in queries) {
 						Console.WriteLine($"\nQuery parsed: {query.query}, {query.meta}");
@@ -294,26 +318,8 @@ namespace Polybius {
 			await Task.Delay(-1);
 		}
 
-		// Init discord client with token from text file.
-		// This allows the token to be separated from source code.
-		static void init_bot() {
-			Console.WriteLine("Initializing Polybius...");
-			Console.WriteLine("Reading auth token...");
-			string bot_token = "";
-			using (StreamReader token = File.OpenText(path_token)) {
-				bot_token = token.ReadLine();
-			}
-			if (bot_token != "")
-				Console.WriteLine("Auth token found.");
-
-			polybius = new DiscordClient(new DiscordConfiguration {
-				Token = bot_token,
-				TokenType = TokenType.Bot
-			});
-		}
-
 		// Updates the guild name of a specific guild.
-		static void update_guild_name(DiscordGuild guild) {
+		public static void update_guild_name(DiscordGuild guild) {
 			// Update `config/guild-{guild_id}/_server_name.txt`.
 			string file_path =
 				$"{Settings.path_save_base}{guild.Id}/{Settings.path_name_file}";
@@ -367,7 +373,7 @@ namespace Polybius {
 
 		// Returns false if the channel should not be responded to,
 		// either in the channel itself or a bot channel.
-		static bool is_channel_tracked(DiscordChannel channel) {
+		public static bool is_channel_tracked(DiscordChannel channel) {
 			// Track non-server channels.
 			if (channel.GuildId is null) {
 				return true;
@@ -435,7 +441,7 @@ namespace Polybius {
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
-		static List<QueryMetaPair> extract_queries(string msg, ulong? guild_id) {
+		public static List<QueryMetaPair> extract_queries(string msg, ulong? guild_id) {
 			Regex regex_query;
 			if (guild_id is null) {
 				regex_query = Settings.regex_query_default();
@@ -457,7 +463,7 @@ namespace Polybius {
 		}
 
 		// Determine the correct channel to reply in.
-		static async Task<DiscordChannel> find_reply_channel(DiscordMessage msg) {
+		internal static async Task<DiscordChannel> find_reply_channel(DiscordMessage msg) {
 			if (msg.Channel.GuildId is null)
 				{ return msg.Channel; }
 
