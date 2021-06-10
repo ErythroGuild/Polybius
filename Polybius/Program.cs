@@ -113,6 +113,27 @@ namespace Polybius {
 			AdminCommands.global_stats,
 		};
 
+		static Program() {
+			Console.WriteLine("Initializing Polybius...");
+			Console.WriteLine("Reading auth token...");
+
+			string bot_token = "";
+			using (StreamReader token = File.OpenText(path_token)) {
+				bot_token = token.ReadLine() ?? "";
+			}
+			if (bot_token == "") {
+				Console.WriteLine("Could not find auth token.");
+				throw new FormatException($"Could not find auth token at {path_token}.");
+			} else {
+				Console.WriteLine("Auth token found.");
+			}
+
+			polybius = new DiscordClient(new DiscordConfiguration {
+				Token = bot_token,
+				TokenType = TokenType.Bot
+			});
+		}
+
 		static void Main() {
 			const string title_ascii =
 				@"     ___      _       _     _           " + "\n" +
@@ -126,8 +147,6 @@ namespace Polybius {
 		}
 
 		static async Task MainAsync() {
-			init_bot();
-
 			// Connected to discord servers (but not necessarily guilds yet!).
 			polybius.Ready += (polybius, e) => {
 				_ = Task.Run(() => {
@@ -298,26 +317,8 @@ namespace Polybius {
 			await Task.Delay(-1);
 		}
 
-		// Init discord client with token from text file.
-		// This allows the token to be separated from source code.
-		static void init_bot() {
-			Console.WriteLine("Initializing Polybius...");
-			Console.WriteLine("Reading auth token...");
-			string bot_token = "";
-			using (StreamReader token = File.OpenText(path_token)) {
-				bot_token = token.ReadLine();
-			}
-			if (bot_token != "")
-				Console.WriteLine("Auth token found.");
-
-			polybius = new DiscordClient(new DiscordConfiguration {
-				Token = bot_token,
-				TokenType = TokenType.Bot
-			});
-		}
-
 		// Updates the guild name of a specific guild.
-		static void update_guild_name(DiscordGuild guild) {
+		public static void update_guild_name(DiscordGuild guild) {
 			// Update `config/guild-{guild_id}/_server_name.txt`.
 			string file_path =
 				$"{Settings.path_save_base}{guild.Id}/{Settings.path_name_file}";
