@@ -48,7 +48,7 @@ namespace Polybius {
 		}
 
 		// Log to the console.
-		private void print_console(string text, Severity level, DateTime time) {
+		private static void print_console(string text, Severity level, DateTime time) {
 			string time_str = time.ToString(@"H:mm:ss");
 			write_colored($"{time_str} ", ConsoleColor.DarkGray);
 
