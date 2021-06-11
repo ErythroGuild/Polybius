@@ -21,6 +21,7 @@ namespace Polybius {
 			timer.AutoReset = true;
 			timer.Elapsed += (s, e) => new_file();
 
+			Directory.CreateDirectory(dir);
 			new_file();
 			timer.Start();
 		}
