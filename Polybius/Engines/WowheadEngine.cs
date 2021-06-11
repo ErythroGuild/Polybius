@@ -365,7 +365,8 @@ namespace Polybius.Engines {
 				Type.AnimaPower or
 				Type.AzeriteTrait or
 				Type.Mount or
-				Type.Profession => $@"https://www.wowhead.com/spell={id}",
+				Type.Profession
+					=> $@"https://www.wowhead.com/spell={id}",
 				Type.Essence => $@"https://www.wowhead.com/azerite-essence/{id}",
 				Type.Affix => $@"https://www.wowhead.com/affix={id}",
 				Type.BattlePet => $@"https://www.wowhead.com/npc={id}",
