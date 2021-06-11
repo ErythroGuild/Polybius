@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -124,11 +124,11 @@ namespace Polybius {
 		const string delim_key = "=", delim_entry = ",";
 		const string str_null = "null";
 		const string
-			key_log_stats	= "do_log_stats",
-			key_token_L		= "token_L",
-			key_token_R		= "token_R",
-			key_split		= "split",
-			key_ch_bot		= "ch_bot",
+			key_log_stats    = "do_log_stats",
+			key_token_L      = "token_L",
+			key_token_R      = "token_R",
+			key_split	     = "split",
+			key_ch_bot       = "ch_bot",
 			key_ch_whitelist = "ch_whitelist",
 			key_ch_blacklist = "ch_blacklist";
 
@@ -147,7 +147,7 @@ namespace Polybius {
 		public void save() {
 			try {
 				// Directory must exist before attempting to create a file there.
-				Directory.CreateDirectory(path_save_base + id.ToString());
+				Directory.CreateDirectory($"{path_save_base}{id}");
 				StreamWriter file_save = new (get_path_save());
 
 				// Convenience functions for writing to the file.
