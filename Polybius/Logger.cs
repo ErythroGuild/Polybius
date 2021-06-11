@@ -36,6 +36,14 @@ namespace Polybius {
 			s.Close();
 		}
 
+		// Create a newline (no timestamps) on the console and logfile.
+		public void endl() {
+			Console.WriteLine();
+			StreamWriter writer = File.AppendText(file);
+			writer.WriteLine();
+			writer.Close();
+		}
+
 		// Convenience functions for logging to various priorities.
 		public void error  (string text) { log(text, Severity.Error); }
 		public void warning(string text) { log(text, Severity.Warning); }
