@@ -267,8 +267,13 @@ namespace Polybius {
 					}
 				
 					// Check for queries and exit if none are found.
+					// Discard blank queries.
 					List<QueryMetaPair> queries =
 						extract_queries(msg_text, msg.Channel?.GuildId ?? null);
+					foreach (QueryMetaPair query in queries) {
+						if (query.query.Trim() == "")
+							{ queries.Remove(query); }
+					}
 					if (queries.Count == 0)
 						{ return; }
 
