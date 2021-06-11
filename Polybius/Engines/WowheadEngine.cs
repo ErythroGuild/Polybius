@@ -117,6 +117,16 @@ namespace Polybius.Engines {
 				}
 			}
 
+			// Try alternative `var g_pageInfo` locations.
+			xpath_data = @"//div[@id='main-contents']/script";
+			nodes_data = page.SelectNodes(xpath_data);
+			foreach (HtmlNode node in nodes_data) {
+				string data = node.InnerText;
+				if (regex_pageinfo.IsMatch(data)) {
+					return regex_pageinfo.Match(data).Groups["data"].Value;
+				}
+			}
+
 			return null;
 		}
 
@@ -131,7 +141,7 @@ namespace Polybius.Engines {
 			// the `g_pageInfo` variable, then extract the breadcrumb.
 			Regex regex_pageinfo = new (@"g_pageInfo = {(?<data>.+)};");
 			Regex regex_breadcrumb = new (@"breadcrumb: \[(?<data>[\w\-"", ]+)\]");
-			string breadcrumb = "";
+			string? breadcrumb = null;
 			foreach (HtmlNode node in nodes_data) {
 				string data = node.InnerText;
 				if (regex_pageinfo.IsMatch(data)) {
@@ -139,6 +149,21 @@ namespace Polybius.Engines {
 					break;
 				}
 			}
+
+			// Check alternate locations for breadcrumb.
+			if (breadcrumb is null) {
+				xpath_data = @"//div[@id='main-contents']/script";
+				nodes_data = page.SelectNodes(xpath_data);
+				foreach (HtmlNode node in nodes_data) {
+					string data = node.InnerText;
+					if (regex_pageinfo.IsMatch(data)) {
+						breadcrumb = regex_breadcrumb.Match(data).Groups["data"].Value;
+						break;
+					}
+				}
+			}
+			if (breadcrumb is null)
+				{ return null; }
 
 			// Format breadcrumb in a easily parseable context.
 			breadcrumb = breadcrumb.Replace(" ", "");
