@@ -32,7 +32,8 @@ namespace Polybius {
 			log_epoch = DateTime.Now;
 			string filename = log_epoch.ToString("yyyy-MM-dd_Hmm");
 			file = $@"{dir}/{filename}.txt";
-			File.CreateText(file);
+			StreamWriter s = File.CreateText(file);
+			s.Close();
 		}
 
 		// Convenience functions for logging to various priorities.
