@@ -9,6 +9,7 @@ namespace Polybius.Engines {
 		const string delim = @"=";
 
 		public static List<SearchResult> search(Program.QueryMetaPair token) {
+			Program.log.info("  Searching easter eggs...");
 			List<SearchResult> results = new ();
 
 			StreamReader db = new (path_db);
@@ -18,6 +19,7 @@ namespace Polybius.Engines {
 				string name = split[0], data = split[1];
 				data = decode_newlines(data);
 				if (name == token.query) {
+					Program.log.info("    Easter egg result found.");
 					results.Add(new EasterEggSearchResult {
 						is_exact_match = true,
 						similarity = 1.0F,
@@ -29,6 +31,7 @@ namespace Polybius.Engines {
 			}
 			db.Close();
 
+			Program.log.debug("  Easter eggs searched.");
 			return results;
 		}
 
