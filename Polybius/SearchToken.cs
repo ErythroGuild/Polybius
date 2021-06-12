@@ -49,7 +49,7 @@ namespace Polybius {
 			this.text = text;
 
 			// assign type
-			string type_str = "";
+			string type_str;
 			if (meta.Contains(delim)) {
 				string[] split = meta.Split(delim, 2);
 				type_str = split[0];

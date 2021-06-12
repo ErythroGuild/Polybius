@@ -75,7 +75,7 @@ namespace Polybius {
 			_ch_blacklist = new ();
 		}
 
-		public static Regex regex_query_default() {
+		public static Regex regex_token_default() {
 			string regex =
 				$@"{Regex.Escape(token_L_default)}(?<{group_query}>.+?)" +
 				$@"(?:{Regex.Escape(split_default)}(?<{group_meta}>.+?))?" +
@@ -83,7 +83,7 @@ namespace Polybius {
 			return new Regex(regex, RegexOptions.IgnoreCase);
 		}
 
-		public Regex regex_query() {
+		public Regex regex_token() {
 			// e.g.:
 			// \Q[[\E(?<query>.+?)(?:\Q|\E(?<meta>.+?))?\Q]]\E
 			string regex =

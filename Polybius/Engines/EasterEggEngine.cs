@@ -8,7 +8,7 @@ namespace Polybius.Engines {
 		const string path_db = @"db/easter_eggs.txt";
 		const string delim = @"=";
 
-		public static List<SearchResult> search(Program.QueryMetaPair token) {
+		public static List<SearchResult> search(SearchToken token) {
 			Program.log.info("  Searching easter eggs...");
 			List<SearchResult> results = new ();
 
@@ -18,7 +18,7 @@ namespace Polybius.Engines {
 				string[] split = line.Split(delim, 2);
 				string name = split[0], data = split[1];
 				data = decode_newlines(data);
-				if (name == token.query) {
+				if (name == token.text) {
 					Program.log.info("    Easter egg result found.");
 					results.Add(new EasterEggSearchResult {
 						is_exact_match = true,

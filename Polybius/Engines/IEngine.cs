@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Polybius.Engines {
 	interface IEngine {
-		public static List<SearchResult> search(Program.QueryMetaPair token) =>
+		public static List<SearchResult> search(SearchToken token) =>
 			throw new NotImplementedException();
 	}
 }

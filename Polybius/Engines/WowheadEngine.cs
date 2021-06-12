@@ -15,9 +15,9 @@ namespace Polybius.Engines {
 		const string url_search = @"https://www.wowhead.com/search?q=";
 		const int embed_color = 0xA71A19;
 
-		public static List<SearchResult> search(Program.QueryMetaPair token) {
+		public static List<SearchResult> search(SearchToken token) {
 			Program.log.info("  Searching Wowhead...");
-			HtmlDocument doc = http.Load(url_search + token.query);
+			HtmlDocument doc = http.Load(url_search + token.text);
 			Program.log.debug("    Wowhead search loaded.");
 			HtmlNode page = doc.DocumentNode;
 
@@ -353,7 +353,7 @@ namespace Polybius.Engines {
 
 		// Takes an entire tab worth of results (and the category of the tab),
 		// and returns a parsed list of (`Wowhead`)`SearchResult`s.
-		static List<SearchResult> parse_results(Type type, List<string> tab, Program.QueryMetaPair token) {
+		static List<SearchResult> parse_results(Type type, List<string> tab, SearchToken token) {
 			List<SearchResult> entries = new ();
 			// Capture groups are accessed from a 1-based list,
 			// [0] contains the match string itself.
@@ -371,7 +371,7 @@ namespace Polybius.Engines {
 				}
 
 				// Collate matches into a list.
-				if (name.ToLower() == token.query.ToLower()) {
+				if (name.ToLower() == token.text.ToLower()) {
 					string id = regex_id.Match(entry).Groups["id"].Value;
 					string url = create_entry_url(type, id);
 					entries.Add(new WowheadSearchResult() {

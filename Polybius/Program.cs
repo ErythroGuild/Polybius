@@ -18,7 +18,6 @@ namespace Polybius {
 	using PermissionTable = Dictionary<Action<string, DiscordMessage>, Permissions>;
 
 	class Program {
-		public record QueryMetaPair(string query, string meta);
 		record ChannelBotPair(ulong ch, ulong bot);
 
 		// Discord client objects.
@@ -52,7 +51,7 @@ namespace Polybius {
 			rate_long = 8;
 
 		// Per message caps for queries and results.
-		internal const int cap_queries = 5;
+		internal const int cap_tokens = 5;
 		internal const int cap_results = 3;
 
 		internal static readonly CommandTable command_list = new () {
@@ -339,19 +338,19 @@ namespace Polybius {
 				
 					// Check for queries and exit if none are found.
 					// Discard blank queries.
-					List<QueryMetaPair> queries =
-						extract_queries(msg_text, msg.Channel?.GuildId ?? null);
-					bool did_discard_query = false;
-					foreach (QueryMetaPair query in queries) {
-						if (query.query.Trim() == "") {
-							queries.Remove(query);
+					List<SearchToken> tokens =
+						extract_tokens(msg_text, msg.Channel?.GuildId ?? null);
+					bool did_discard_token = false;
+					foreach (SearchToken token in tokens) {
+						if (token.text.Trim() == "") {
+							tokens.Remove(token);
 							log.debug("  Blank query discarded.");
-							did_discard_query = true;
+							did_discard_token = true;
 						}
 					}
-					if (did_discard_query)
+					if (did_discard_token)
 						{ log.endl(); }
-					if (queries.Count == 0)
+					if (tokens.Count == 0)
 						{ return; }
 
 					// Log message.
@@ -359,11 +358,11 @@ namespace Polybius {
 					log.debug($"  {msg.Content}");
 
 					// Cap the number of queries accepted per message.
-					if (queries.Count > cap_queries) {
+					if (tokens.Count > cap_tokens) {
 						log.warning("  Query cap (per message) exceeded. Discarding excess queries.");
-						log.debug($"    {queries.Count} quer{(queries.Count==1 ? "y" : "ies" )} found.");
-						log.debug($"    Keeping first {cap_queries} quer{(queries.Count==1 ? "y" : "ies")}.");
-						queries = queries.GetRange(0, cap_queries);
+						log.debug($"    {tokens.Count} quer{(tokens.Count==1 ? "y" : "ies" )} found.");
+						log.debug($"    Keeping first {cap_tokens} quer{(tokens.Count==1 ? "y" : "ies")}.");
+						tokens = tokens.GetRange(0, cap_tokens);
 					}
 
 					// Indicate to the user that their query has been received
@@ -371,16 +370,16 @@ namespace Polybius {
 					if (msg.Channel is not null)
 						{ await msg.Channel.TriggerTypingAsync(); }
 
-					foreach (QueryMetaPair query in queries) {
-						log.info($@"  Query: text - {query.query}, meta - {query.meta}");
+					foreach (SearchToken token in tokens) {
+						log.info($@"  Query: text - {token.text}, meta - {token.meta}");
 
 						List<SearchResult> results = new ();
-						results.AddRange(WowheadEngine.search(query));
-						results.AddRange(EasterEggEngine.search(query));
+						results.AddRange(WowheadEngine.search(token));
+						results.AddRange(EasterEggEngine.search(token));
 
 						// Handle case where no results were found.
 						if (results.Count == 0) {
-							_ = msg.RespondAsync($"No results found for `{query.query}`.");
+							_ = msg.RespondAsync($"No results found for `{token.text}`.");
 							log.info("    No results found.");
 							log.endl();
 							return;
@@ -544,25 +543,25 @@ namespace Polybius {
 		}
 
 		// Matches all tokens of the format `[[TOKEN]]`.
-		public static List<QueryMetaPair> extract_queries(string msg, ulong? guild_id) {
-			Regex regex_query;
+		public static List<SearchToken> extract_tokens(string msg, ulong? guild_id) {
+			Regex regex_token;
 			if (guild_id is null) {
-				regex_query = Settings.regex_query_default();
+				regex_token = Settings.regex_token_default();
 			} else {
-				regex_query = settings[(ulong)guild_id].regex_query();
+				regex_token = settings[(ulong)guild_id].regex_token();
 			}
 
-			List<QueryMetaPair> queries = new ();
-			MatchCollection matches = regex_query.Matches(msg);
+			List<SearchToken> tokens = new ();
+			MatchCollection matches = regex_token.Matches(msg);
 			foreach (Match match in matches) {
-				string query = match.Groups[Settings.group_query].Value;
-				query = query.Trim().ToLower();
+				string text = match.Groups[Settings.group_query].Value;
+				text = text.Trim().ToLower();
 				string meta = match.Groups[Settings.group_meta].Value;
 				meta = meta.Trim();
-				queries.Add(new (query, meta));
+				tokens.Add(new SearchToken(text, meta));
 			}
 
-			return queries;
+			return tokens;
 		}
 
 		// Determine the correct channel to reply in.
