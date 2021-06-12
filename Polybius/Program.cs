@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using DSharpPlus;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 using Polybius.Commands;
 using Polybius.Engines;
@@ -26,6 +28,7 @@ namespace Polybius {
 		// File paths for config files.
 		internal const string path_build = @"config/commit.txt";
 		internal const string path_version = @"config/tag.txt";
+		internal const string path_serilog = @"logs_D#+/serilog.txt";
 #if RELEASE
 		const string path_token = @"config/token.txt";
 #else
@@ -128,7 +131,16 @@ namespace Polybius {
 				Console.WriteLine("Auth token found.");
 			}
 
+			// Initialize Serilog and connect it to Logger.
+			Log.Logger = new LoggerConfiguration()
+				.WriteTo.File(
+					path_serilog,
+					outputTemplate: "{Timestamp:yyyy-MM-dd H:mm:ss.ff} > [{Level:u3}] {Message}{NewLine}",
+					rollingInterval: RollingInterval.Day)
+				.CreateLogger();
+			var serilog = new LoggerFactory().AddSerilog();
 			polybius = new DiscordClient(new DiscordConfiguration {
+				LoggerFactory = serilog,
 				Token = bot_token,
 				TokenType = TokenType.Bot
 			});
