@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -17,8 +18,13 @@ namespace Polybius.Engines {
 
 		public static List<SearchResult> search(SearchToken token) {
 			Program.log.info("  Searching Wowhead...");
+			Stopwatch stopwatch = Stopwatch.StartNew();
 			HtmlDocument doc = http.Load(url_search + token.text);
+			stopwatch.Stop();
 			Program.log.debug("    Wowhead search loaded.");
+			Program.log.debug($"      Took {stopwatch.ElapsedMilliseconds} msec.");
+
+			stopwatch.Restart();
 			HtmlNode page = doc.DocumentNode;
 
 			// If we were immediately redirected to a non-search page,
@@ -68,16 +74,20 @@ namespace Polybius.Engines {
 
 				List<string> entries = parse_tab_entries(tab_data);
 				List<SearchResult> tab_results = parse_results((Type)type, entries, token);
-				Program.log.debug($"      Added {tab_results.Count} entr{(tab_results.Count == 1 ? "y" : "ies")}.");
+				Program.log.debug($"        Added {tab_results.Count} entr{(tab_results.Count == 1 ? "y" : "ies")}.");
 				results.AddRange(tab_results);
 			}
 
+			stopwatch.Stop();
+			Program.log.debug($"    Took {stopwatch.ElapsedMilliseconds} msec to parse search results.");
 			return results;
 		}
 
 		// Parse a page (redirected immediately from the search page)
 		// into a `WowheadSearchResult`.
 		static List<SearchResult> result_from_redirect(HtmlNode doc, string url) {
+			Stopwatch stopwatch = Stopwatch.StartNew();
+
 			// Find and parse the `g_pageInfo` string.
 			string? pageinfo = parse_pageinfo(doc);
 			if (pageinfo is null) {
@@ -106,6 +116,9 @@ namespace Polybius.Engines {
 				type = (Type)type,
 				id = id
 			};
+
+			stopwatch.Stop();
+			Program.log.debug($"    Took {stopwatch.ElapsedMilliseconds} msec to parse redirected page.");
 			return new List<SearchResult>() { result };
 		}
 
@@ -454,6 +467,9 @@ namespace Polybius.Engines {
 			public string id = "";
 
 			public override DiscordMessageBuilder get_display() {
+				Stopwatch stopwatch_total = Stopwatch.StartNew();
+				Program.log.info("    Rendering Wowhead result...");
+
 				DiscordEmbed embed = new DiscordEmbedBuilder()
 					.WithColor(embed_color)
 					.WithTitle(name)
@@ -461,7 +477,10 @@ namespace Polybius.Engines {
 					.WithFooter("powered by Wowhead", @"https://wow.zamimg.com/images/logos/favicon-standard.png");
 
 				// Load data url into a document for later reuse.
+				Stopwatch stopwatch_load = Stopwatch.StartNew();
 				HtmlDocument doc = http.Load(data);
+				stopwatch_load.Stop();
+				Program.log.debug($"      Took {stopwatch_load.ElapsedMilliseconds} msec to load page.");
 				HtmlNode page = doc.DocumentNode;
 
 				// Parse the icon and add it to the embed if it exists.
@@ -513,6 +532,8 @@ namespace Polybius.Engines {
 				// Construct embed and pass it to caller.
 				embed = new DiscordEmbedBuilder(embed)
 					.WithDescription(description);
+				stopwatch_total.Stop();
+				Program.log.debug($"      Rendered result in {stopwatch_total} msec.");
 				return new DiscordMessageBuilder().WithEmbed(embed);
 			}
 

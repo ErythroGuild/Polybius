@@ -1,14 +1,18 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 using DSharpPlus.Entities;
 
 namespace Polybius.Engines {
 	class EasterEggEngine : IEngine {
+		readonly static Stopwatch stopwatch = new ();
+
 		const string path_db = @"db/easter_eggs.txt";
 		const string delim = @"=";
 
 		public static List<SearchResult> search(SearchToken token) {
+			stopwatch.Restart();
 			Program.log.info("  Searching easter eggs...");
 			List<SearchResult> results = new ();
 
@@ -31,7 +35,9 @@ namespace Polybius.Engines {
 			}
 			db.Close();
 
+			stopwatch.Stop();
 			Program.log.debug("  Easter eggs searched.");
+			Program.log.debug($"    Took {stopwatch.ElapsedMilliseconds} msec.");
 			return results;
 		}
 

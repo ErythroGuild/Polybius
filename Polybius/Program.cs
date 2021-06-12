@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -24,6 +25,7 @@ namespace Polybius {
 		internal static readonly DiscordClient polybius;
 		internal static readonly Dictionary<ulong, Settings> settings = new ();
 		internal static readonly Logger log;
+		static readonly Stopwatch stopwatch_connect;
 
 		// File paths for config files.
 		internal const string path_build = @"config/commit.txt";
@@ -153,6 +155,7 @@ namespace Polybius {
 			log.debug("  Serilog has been set up.");
 
 			// Initialize `DiscordClient`.
+			stopwatch_connect = Stopwatch.StartNew();
 			log.info("  Logging in to Discord.");
 			polybius = new DiscordClient(new DiscordConfiguration {
 				LoggerFactory = serilog,
@@ -186,7 +189,10 @@ namespace Polybius {
 						new ("@Polybius -help", ActivityType.Watching);
 					polybius.UpdateStatusAsync(helptext);
 
+					stopwatch_connect.Stop();
+
 					log.info("  Logged in to Discord servers.");
+					log.debug($"    Took {stopwatch_connect.ElapsedMilliseconds} msec.");
 					log.debug($"    Connected to {polybius.Guilds.Count} server{(polybius.Guilds.Count==1 ? "" : "s")}.");
 					log.endl();
 					log.info("Monitoring messages...");
@@ -200,6 +206,7 @@ namespace Polybius {
 				_ = Task.Run(() => {
 					log.info("Server data downloaded.");
 					log.info("Reading and updating saved settings...");
+					Stopwatch stopwatch = Stopwatch.StartNew();
 					foreach (ulong id in e.Guilds.Keys) {
 						update_guild_name(e.Guilds[id]);
 						log.debug($"  Server: {e.Guilds[id].Name}");
@@ -219,7 +226,10 @@ namespace Polybius {
 						}
 						settings.Add(id, settings_guild);
 					}
+
+					stopwatch.Stop();
 					log.info("Server settings updated.");
+					log.debug($"  Took {stopwatch.ElapsedMilliseconds} msec.");
 					log.endl();
 				});
 				return Task.CompletedTask;
@@ -335,9 +345,10 @@ namespace Polybius {
 						await process_commands(msg_text, msg);
 						log.endl();
 					}
-				
+
 					// Check for queries and exit if none are found.
 					// Discard blank queries.
+					Stopwatch stopwatch = Stopwatch.StartNew();
 					List<SearchToken> tokens =
 						extract_tokens(msg_text, msg.Channel?.GuildId ?? null);
 					bool did_discard_token = false;
@@ -355,6 +366,7 @@ namespace Polybius {
 
 					// Log message.
 					log.info("Queries found in message.");
+					log.debug($"  Took {stopwatch.ElapsedMilliseconds} msec to parse.");
 					log.debug($"  {msg.Content}");
 
 					// Cap the number of queries accepted per message.
@@ -367,6 +379,7 @@ namespace Polybius {
 
 					// Indicate to the user that their query has been received
 					// and is currently being processed.
+					stopwatch.Restart();
 					if (msg.Channel is not null)
 						{ await msg.Channel.TriggerTypingAsync(); }
 
@@ -406,6 +419,8 @@ namespace Polybius {
 						}
 					}
 
+					stopwatch.Stop();
+					log.debug($"  Searches took {stopwatch.ElapsedMilliseconds} msec total.");
 					log.endl();
 				});
 				return Task.CompletedTask;
