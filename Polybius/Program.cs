@@ -334,6 +334,7 @@ namespace Polybius {
 						log.info("Command received.");
 						log.debug($"  {msg_text}");
 						await process_commands(msg_text, msg);
+						log.endl();
 					}
 				
 					// Check for queries and exit if none are found.
@@ -386,7 +387,7 @@ namespace Polybius {
 						}
 
 						// Cap the results returned per query.
-						log.info($"    {results.Count} result{(results.Count==1 ? "" : "s")} found.");
+						log.info($"    {results.Count} result{(results.Count==1 ? "" : "s")} found for query.");
 						if (results.Count > cap_results) {
 							log.info($"    Only displaying the first {cap_results} result{(cap_results==1 ? "" : "s")}.");
 							results = results.GetRange(0, cap_results);
