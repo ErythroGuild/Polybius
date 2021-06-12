@@ -16,7 +16,9 @@ namespace Polybius.Engines {
 		const int embed_color = 0xA71A19;
 
 		public static List<SearchResult> search(Program.QueryMetaPair token) {
+			Program.log.info("  Searching Wowhead...");
 			HtmlDocument doc = http.Load(url_search + token.query);
+			Program.log.debug("    Wowhead search loaded.");
 			HtmlNode page = doc.DocumentNode;
 
 			// If we were immediately redirected to a non-search page,
@@ -25,6 +27,8 @@ namespace Polybius.Engines {
 			string url = http.ResponseUri.ToString();
 			string url_search_frag = @"wowhead.com/search?q=";
 			if (!url.Contains(url_search_frag)) {
+				Program.log.info("    Redirected to result.");
+				Program.log.debug($"      {url}");
 				return result_from_redirect(page, url);
 			}
 
@@ -34,13 +38,16 @@ namespace Polybius.Engines {
 				@"/following-sibling::script";
 			HtmlNode node_data = page.SelectSingleNode(xpath_data);
 			if (node_data is null) {
+				Program.log.info("    No results found.");
 				return new List<SearchResult>();
 			}
 			string data = node_data.InnerText;
 
 			// Extract all the tabs and parse through their entries,
 			// collating the results into a list.
+			Program.log.debug($"    Parsing result tabs...");
 			List<string> tabs = parse_tab_strings(data);
+			Program.log.debug($"      {tabs.Count} tab{(tabs.Count == 1 ? "" : "s")} found.");
 			List<SearchResult> results = new ();
 			foreach (string tab in tabs) {
 				// Identify the type of results contained by the tab.
@@ -52,6 +59,7 @@ namespace Polybius.Engines {
 				if (type is null) {
 					continue;
 				}
+				Program.log.debug($"      Tab type: {type}");
 
 				// Extract individual entries from the tab's data, parse
 				// through, and add to the total list of entries.
@@ -60,6 +68,7 @@ namespace Polybius.Engines {
 
 				List<string> entries = parse_tab_entries(tab_data);
 				List<SearchResult> tab_results = parse_results((Type)type, entries, token);
+				Program.log.debug($"      Added {tab_results.Count} entr{(tab_results.Count == 1 ? "y" : "ies")}.");
 				results.AddRange(tab_results);
 			}
 
@@ -83,6 +92,7 @@ namespace Polybius.Engines {
 			// of the explicitly supported ones.
 			Type? type = type_from_breadcrumb(doc);
 			if (type is null) {
+				Program.log.info("    Unrecognized breadcrumb type.");
 				return new List<SearchResult>();
 			}
 
@@ -127,6 +137,7 @@ namespace Polybius.Engines {
 				}
 			}
 
+			Program.log.warning("    Could not find `g_pageInfo`.");
 			return null;
 		}
 

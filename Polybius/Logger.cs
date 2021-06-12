@@ -30,10 +30,18 @@ namespace Polybius {
 		[MemberNotNull(nameof(file))]
 		private void new_file() {
 			log_epoch = DateTime.Now;
-			string filename = log_epoch.ToString("yyyy-MM-dd_Hmm");
+			string filename = log_epoch.ToString("yyyy-MM-dd_HHmm");
 			file = $@"{dir}/{filename}.txt";
 			StreamWriter s = File.CreateText(file);
 			s.Close();
+		}
+
+		// Create a newline (no timestamps) on the console and logfile.
+		public void endl() {
+			Console.WriteLine();
+			StreamWriter writer = File.AppendText(file);
+			writer.WriteLine();
+			writer.Close();
 		}
 
 		// Convenience functions for logging to various priorities.

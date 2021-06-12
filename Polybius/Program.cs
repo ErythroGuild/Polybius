@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using DSharpPlus;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 using Polybius.Commands;
 using Polybius.Engines;
@@ -22,10 +24,13 @@ namespace Polybius {
 		// Discord client objects.
 		internal static readonly DiscordClient polybius;
 		internal static readonly Dictionary<ulong, Settings> settings = new ();
+		internal static readonly Logger log;
 
 		// File paths for config files.
 		internal const string path_build = @"config/commit.txt";
 		internal const string path_version = @"config/tag.txt";
+		internal const string path_serilog = @"logs_D#+/serilog.txt";
+		internal const string dir_logs = @"logs";
 #if RELEASE
 		const string path_token = @"config/token.txt";
 #else
@@ -114,24 +119,49 @@ namespace Polybius {
 		};
 
 		static Program() {
-			Console.WriteLine("Initializing Polybius...");
-			Console.WriteLine("Reading auth token...");
+			log = new Logger(dir_logs, TimeSpan.FromDays(1));
+			log.info("Initializing Polybius...");
 
+			// Parse authentication token from file.
+			log.info("  Reading auth token...");
 			string bot_token = "";
 			using (StreamReader token = File.OpenText(path_token)) {
 				bot_token = token.ReadLine() ?? "";
 			}
-			if (bot_token == "") {
-				Console.WriteLine("Could not find auth token.");
-				throw new FormatException($"Could not find auth token at {path_token}.");
+			if (bot_token != "") {
+				log.info("  Auth token found.");
+				int disp_size = 8;
+				string token_disp =
+					bot_token[..disp_size] +
+					new string('*', bot_token.Length - 2*disp_size) +
+					bot_token[^disp_size..];
+				log.debug($"    {token_disp}");
 			} else {
-				Console.WriteLine("Auth token found.");
+				log.error("  Could not find auth token.");
+				log.debug($"    Path: {path_token}");
+				throw new FormatException($"Could not find auth token at {path_token}.");
 			}
 
+			// Initialize Serilog and connect it to Logger.
+			log.debug("  Setting up Serilog...");
+			Log.Logger = new LoggerConfiguration()
+				.WriteTo.File(
+					path_serilog,
+					outputTemplate: "{Timestamp:yyyy-MM-dd H:mm:ss.ff} > [{Level:u3}] {Message}{NewLine}",
+					rollingInterval: RollingInterval.Day)
+				.CreateLogger();
+			var serilog = new LoggerFactory().AddSerilog();
+			log.debug("  Serilog has been set up.");
+
+			// Initialize `DiscordClient`.
+			log.info("  Logging in to Discord.");
 			polybius = new DiscordClient(new DiscordConfiguration {
+				LoggerFactory = serilog,
 				Token = bot_token,
 				TokenType = TokenType.Bot
 			});
+
+			log.info("Polybius initialized.");
 		}
 
 		static void Main() {
@@ -142,7 +172,10 @@ namespace Polybius {
 				@"  / ___/ (_) | | |_| | |_) | | |_| \__ \" + "\n" +
 				@"  \/    \___/|_|\__, |_.__/|_|\__,_|___/" + "\n" +
 				@"                |___/                   " + "\n";
+			Console.ForegroundColor = ConsoleColor.DarkRed;
+			Console.WriteLine();
 			Console.WriteLine(title_ascii);
+			Console.ForegroundColor = ConsoleColor.Gray;
 			MainAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 
@@ -154,9 +187,11 @@ namespace Polybius {
 						new ("@Polybius -help", ActivityType.Watching);
 					polybius.UpdateStatusAsync(helptext);
 
-					Console.WriteLine("Connected to discord servers.");
-					Console.WriteLine($"Connected to {polybius.Guilds.Count} server(s).");
-					Console.WriteLine("Monitoring messages...\n");
+					log.info("  Logged in to Discord servers.");
+					log.debug($"    Connected to {polybius.Guilds.Count} server{(polybius.Guilds.Count==1 ? "" : "s")}.");
+					log.endl();
+					log.info("Monitoring messages...");
+					log.endl();
 				});
 				return Task.CompletedTask;
 			};
@@ -164,19 +199,29 @@ namespace Polybius {
 			// Guild data has finished downloading.
 			polybius.GuildDownloadCompleted += (polybius, e) => {
 				_ = Task.Run(() => {
+					log.info("Server data downloaded.");
+					log.info("Reading and updating saved settings...");
 					foreach (ulong id in e.Guilds.Keys) {
 						update_guild_name(e.Guilds[id]);
+						log.debug($"  Server: {e.Guilds[id].Name}");
 
 						// load existing settings if possible; else set to default
 						Settings settings_guild;
 						if (Settings.has_save(id)) {
+							log.debug("    Loading existing settings...");
 							settings_guild = Settings.load(id);
+							log.debug("    Settings loaded.");
 						} else {
+							log.debug("    No existing settings found.");
+							log.debug("    Initializing with default settings...");
 							settings_guild = new (id);
 							settings_guild.save();
+							log.debug("    Settings initialized to default.");
 						}
 						settings.Add(id, settings_guild);
 					}
+					log.info("Server settings updated.");
+					log.endl();
 				});
 				return Task.CompletedTask;
 			};
@@ -184,10 +229,14 @@ namespace Polybius {
 			// Was added to a new guild.
 			polybius.GuildCreated += (polybius, e) => {
 				_ = Task.Run(() => {
+					log.info($"Added to new guild: {e.Guild.Name}");
+					log.debug("  Initializing to default settings...");
 					update_guild_name(e.Guild);
 					Settings settings_guild = new (e.Guild.Id);
 					settings_guild.save();
 					settings.Add(e.Guild.Id, settings_guild);
+					log.debug("  Settings initialized.");
+					log.endl();
 				});
 				return Task.CompletedTask;
 			};
@@ -195,6 +244,9 @@ namespace Polybius {
 			// Was removed from a guild.
 			polybius.GuildDeleted += (polybius, e) => {
 				_ = Task.Run(() => {
+					log.info($"Removed from server: {e.Guild.Name}");
+					log.info("  Deleting saved settings...");
+
 					// Server data: `config/guild-{guild_id}/`
 					// `_server_name.txt`
 					// `settings.txt`
@@ -214,8 +266,11 @@ namespace Polybius {
 							Directory.Delete(path_dir);
 						}
 					} catch (IOException) {
-						Console.WriteLine($"Could not delete settings for removed guild: {e.Guild.Id}");
+						log.error($"  Could not delete settings for server: {e.Guild.Id}");
 					}
+
+					log.info("  Settings deleted.");
+					log.endl();
 				});
 				return Task.CompletedTask;
 			};
@@ -223,7 +278,10 @@ namespace Polybius {
 			// Any monitored guild has updated their info.
 			polybius.GuildUpdated += (polybius, e) => {
 				_ = Task.Run(() => {
+					log.debug($"Updating server info for: {e.GuildBefore.Name}");
 					update_guild_name(e.GuildAfter);
+					log.debug($"  Server info updated for: {e.GuildAfter.Name}");
+					log.endl();
 				});
 				return Task.CompletedTask;
 			};
@@ -243,12 +301,22 @@ namespace Polybius {
 
 					// Rate-limit responses to other bots.
 					if (msg.Author.IsBot) {
+						log.info("Bot message received.");
+						log.info("  Checking ratelimits...");
+
 						ChannelBotPair ch_bot_id = new (msg.ChannelId, msg.Author.Id);
 
 						try_init_ratelimit(ch_bot_id);
 						bool is_limited = !try_process_ratelimit(ch_bot_id);
-						if (is_limited)
-							{ return; }
+						string bot_name = $"{msg.Author.Username}#{msg.Author.Discriminator}";
+						if (is_limited) {
+							log.warning($"  {bot_name} is currently being ratelimited!");
+							log.info("  Message will be silently discarded.");
+							log.endl();
+							return;
+						} else {
+							log.debug($"  {bot_name} is below ratelimit.");
+						}
 					}
 
 					// Check if channel is illegal to respond in.
@@ -263,6 +331,8 @@ namespace Polybius {
 					if (msg_text.StartsWith(mention_str)) {
 						msg_text = msg_text[mention_str.Length..];
 						msg_text = msg_text.TrimStart();
+						log.info("Command received.");
+						log.debug($"  {msg_text}");
 						await process_commands(msg_text, msg);
 					}
 				
@@ -270,15 +340,28 @@ namespace Polybius {
 					// Discard blank queries.
 					List<QueryMetaPair> queries =
 						extract_queries(msg_text, msg.Channel?.GuildId ?? null);
+					bool did_discard_query = false;
 					foreach (QueryMetaPair query in queries) {
-						if (query.query.Trim() == "")
-							{ queries.Remove(query); }
+						if (query.query.Trim() == "") {
+							queries.Remove(query);
+							log.debug("  Blank query discarded.");
+							did_discard_query = true;
+						}
 					}
+					if (did_discard_query)
+						{ log.endl(); }
 					if (queries.Count == 0)
 						{ return; }
 
+					// Log message.
+					log.info("Queries found in message.");
+					log.debug($"  {msg.Content}");
+
 					// Cap the number of queries accepted per message.
 					if (queries.Count > cap_queries) {
+						log.warning("  Query cap (per message) exceeded. Discarding excess queries.");
+						log.debug($"    {queries.Count} quer{(queries.Count==1 ? "y" : "ies" )} found.");
+						log.debug($"    Keeping first {cap_queries} quer{(queries.Count==1 ? "y" : "ies")}.");
 						queries = queries.GetRange(0, cap_queries);
 					}
 
@@ -288,23 +371,28 @@ namespace Polybius {
 						{ await msg.Channel.TriggerTypingAsync(); }
 
 					foreach (QueryMetaPair query in queries) {
-						Console.WriteLine($"\nQuery parsed: {query.query}, {query.meta}");
+						log.info($@"  Query: text - {query.query}, meta - {query.meta}");
 
 						List<SearchResult> results = new ();
 						results.AddRange(WowheadEngine.search(query));
 						results.AddRange(EasterEggEngine.search(query));
 
+						// Handle case where no results were found.
 						if (results.Count == 0) {
-							Console.WriteLine("> No results found.");
 							_ = msg.RespondAsync($"No results found for `{query.query}`.");
+							log.info("    No results found.");
+							log.endl();
 							return;
 						}
 
 						// Cap the results returned per query.
+						log.info($"    {results.Count} result{(results.Count==1 ? "" : "s")} found.");
 						if (results.Count > cap_results) {
+							log.info($"    Only displaying the first {cap_results} result{(cap_results==1 ? "" : "s")}.");
 							results = results.GetRange(0, cap_results);
 						}
 
+						// Display results.
 						foreach (SearchResult result in results) {
 							if (result.is_exact_match) {
 								DiscordChannel channel =
@@ -312,9 +400,13 @@ namespace Polybius {
 								_ = result.get_display()
 									.WithReply(msg.Id)
 									.SendAsync(channel);
+								log.info($"  Result: {result.name}");
+								log.debug($"    {result.data}");
 							}
 						}
 					}
+
+					log.endl();
 				});
 				return Task.CompletedTask;
 			};
@@ -336,8 +428,8 @@ namespace Polybius {
 				file.WriteLine(guild.Name);
 				file.Close();
 			} catch {
-				Console.WriteLine($"Could not update guild name for {guild.Name}.");
-				Console.WriteLine("> (could not create save file)");
+				log.error($"  Could not update server name for {guild.Name}.");
+				log.debug("    Could not create save file.");
 			}
 		}
 
@@ -429,6 +521,7 @@ namespace Polybius {
 						Permissions permission_req = dict_permission[command];
 						if (!permissions.HasPermission(permission_req)) {
 							_ = msg.RespondAsync(":warning: You do not have sufficient permissions to use that command.");
+							log.info($"  {msg.Author.Username}#{msg.Author.Discriminator} does not have permission to use this command.");
 							return;
 						}
 					}
@@ -436,10 +529,14 @@ namespace Polybius {
 					if (dict_admin.Contains(command)) {
 						if (msg.Author.Id != id_user_admin) {
 							_ = msg.RespondAsync(":warning: Only the Polybius admin can use that command.");
+							log.info($"  {msg.Author.Username}#{msg.Author.Discriminator} attempted to use an admin command.");
 							return;
 						}
 					}
 					command_list[cmd](arg, msg);
+				} else {
+					_ = msg.RespondAsync($":confused: Unknown command. Use `{HelpCommand.m} -help` for more info.");
+					log.info("  Command not recognized.");
 				}
 				return;
 			}
