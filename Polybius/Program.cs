@@ -154,7 +154,9 @@ namespace Polybius {
 				@"  / ___/ (_) | | |_| | |_) | | |_| \__ \" + "\n" +
 				@"  \/    \___/|_|\__, |_.__/|_|\__,_|___/" + "\n" +
 				@"                |___/                   " + "\n";
+			Console.ForegroundColor = ConsoleColor.DarkRed;
 			Console.WriteLine(title_ascii);
+			Console.ForegroundColor = ConsoleColor.Gray;
 			MainAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 
