@@ -535,6 +535,7 @@ namespace Polybius {
 					}
 					command_list[cmd](arg, msg);
 				} else {
+					_ = msg.RespondAsync($":confused: Unknown command. Use `{HelpCommand.m} -help` for more info.");
 					log.info("  Command not recognized.");
 				}
 				return;

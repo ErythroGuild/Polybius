@@ -9,7 +9,7 @@ namespace Polybius.Commands {
 	using HelpTable = Dictionary<Action<string, DiscordMessage>, Func<DiscordMessage, string>>;
 
 	class HelpCommand {
-		static readonly string m = $"@{Program.polybius.CurrentUser.Username}";
+		public static readonly string m = $"@{Program.polybius.CurrentUser.Username}";
 
 		static readonly HelpTable dict_help = new () {
 			{ HelpCommand.main        , help_general },
