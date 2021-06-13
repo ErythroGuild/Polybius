@@ -39,6 +39,9 @@ inside double-square brackets, `[[like so]]`.
 * `@Polybius -reset-server-settings`:
   Reset all settings back to default, as if the bot has just been
   added to the server.
+* `@Polybius -version`:
+  Displays the (most recent) release the running bot is built from,
+  and the first few characters of the commit SHA.
 
 ## Required Permissions
 
