@@ -6,8 +6,11 @@ ambi=Did you mean to search for "dentures"?
 amburger=https://tenor.com/view/maghla-zevent-choque-choquee-shocked-gif-18850898
 angry bambi=https://tenor.com/view/detective-conan-ran-mouri-ran-shinichi-kudo-shinichi-gif-16899479
 breakfast soup=No, coffee is not a breakfast. :pancakes:
+burn centers=https://en.wikipedia.org/wiki/List_of_burn_centers_in_the_United_States
 choke me daddy=no
 choke me, daddy=no
+coffee=https://www.youtube.com/watch?v=jMAJLHKYotE
+coffee break=https://www.youtube.com/watch?v=jMAJLHKYotE
 cy=These hands are rated E for "Iguana" :raised_hands:
 dentures=Did you mean to search for "Amber"?
 drunk keys=https://gfycat.com/denseklutzyhamadryas-rick-and-morty-drinking-drunk-wine
@@ -75,4 +78,4 @@ uwu=UwU Pizza Delivery, may I take your order?
 violet=https://i.redd.it/xpwlte1vyh371.jpg
 void=Sometimes puns are difficult to *avoid* but Ernie says he'll *annul* my contract if I make too many. :unamused:
 wagon=https://gfycat.com/tightanchoredgibbon
-what do you do with a drunken sailor=Shave his belly with a rusty razor,/nshave his belly with a rusty razor,/nshave his belly with a rusty razor,/nearly in the morning!
+what do you do with a drunken sailor=Shave his belly with a rusty razor,\nshave his belly with a rusty razor,\nshave his belly with a rusty razor,\nearly in the morning!

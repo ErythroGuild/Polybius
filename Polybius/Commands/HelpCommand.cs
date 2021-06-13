@@ -9,6 +9,20 @@ namespace Polybius.Commands {
 	using HelpTable = Dictionary<Action<string, DiscordMessage>, Func<DiscordMessage, string>>;
 
 	class HelpCommand {
+		// Convenience functions for text printing.
+		static StringWriter text = new ();
+		static void text_clr() {
+			text = new StringWriter();
+		}
+		static string text_out() {
+			text.Flush();
+			return text.ToString();
+		}
+
+		// Shorthand interpolation strings.
+		const string
+			b = "\u2022";
+
 		public static readonly string m = $"@{Program.polybius.CurrentUser.Username}";
 
 		static readonly HelpTable dict_help = new () {
@@ -57,7 +71,6 @@ namespace Polybius.Commands {
 		// The general help command, also given when an invalid argument
 		// is given. The only discoverable entry point to the bot.
 		static string help_general(DiscordMessage msg) {
-			StringWriter text = new ();
 			string tL, tR, tS;
 
 			// Fetch customized tokens from guild settings.
@@ -73,47 +86,42 @@ namespace Polybius.Commands {
 				tS = Settings.split_default;
 			}
 
+			text_clr();
 			text.WriteLine($"Surround anything you want to search for in your message with `{tL}` and `{tR}`. E.g.:");
 			text.WriteLine($"> I would have done better if you had given me `{tL}innervate{tR}`.");
-			//text.WriteLine();
-			//text.WriteLine($"You can also add `{tS}` to use a specific search engine or specify which results you want.");
-			//text.WriteLine($"> Check out the new `{tL}Dreamrunner{tS}pet{tR}` model they added!");
+			text.WriteLine();
+			text.WriteLine($"You can also add `{tS}` to use a specific search engine or specify which results you want.");
+			text.WriteLine($"> Check out the new `{tL}Dreamrunner{tS}pet{tR}` model they added!");
 			text.WriteLine();
 			text.WriteLine("Use the command name to get more help on commands, e.g.:");
 			text.WriteLine($"> `{m} -help view-tokens`");
 			text.WriteLine($"For even more information, use `{m} -help more`.");
-
-			text.Flush();
-			return text.ToString();
+			return text_out();
 		}
 
 		// A help command with a listing of all the available commands.
 		static string help_verbose(DiscordMessage msg) {
-			StringWriter text = new ();
-
+			text_clr();
 			text.WriteLine("These are the available commands.");
-			text.WriteLine($"\u2022 `{m} -blacklist <channel>`, `{m} -whitelist <channel>`: Configure channel filters.");
-			text.WriteLine($"\u2022 `{m} -bot-channel <channel>`, `{m} -clear-bot-channel`: Configure a bot channel.");
-			text.WriteLine($"\u2022 `{m} -view-filters`: View current channel filters.");
-			text.WriteLine($"\u2022 `{m} -set-token-L <str>`, `{m} -set-token-R <str>`, `{m} -set-split <str>`: Configure search format.");
-			text.WriteLine($"\u2022 `{m} -view-tokens`: View current search format.");
-			text.WriteLine($"\u2022 `{m} -reset-server-settings`: Reset to default settings.");
-			text.WriteLine($"\u2022 `{m} -version`: View the current release and build.");
+			text.WriteLine($"{b} `{m} -blacklist <channel>`, `{m} -whitelist <channel>`: Configure channel filters.");
+			text.WriteLine($"{b} `{m} -bot-channel <channel>`, `{m} -clear-bot-channel`: Configure a bot channel.");
+			text.WriteLine($"{b} `{m} -view-filters`: View current channel filters.");
+			text.WriteLine($"{b} `{m} -set-token-L <str>`, `{m} -set-token-R <str>`, `{m} -set-split <str>`: Configure search format.");
+			text.WriteLine($"{b} `{m} -view-tokens`: View current search format.");
+			text.WriteLine($"{b} `{m} -reset-server-settings`: Reset to default settings.");
+			text.WriteLine($"{b} `{m} -version`: View the current release and build.");
 			text.WriteLine();
 			text.WriteLine("Use the command name to get more help on commands, e.g.:");
 			text.WriteLine($"> `{m} -help view-tokens`");
 			text.WriteLine();
 			text.WriteLine($"Also see: `{m} -help`.");
-
-			text.Flush();
-			return text.ToString();
+			return text_out();
 		}
 		static void help_verbose(string arg, DiscordMessage msg) { }
 
 		// The help command for configuring the blacklist & whitelist.
 		static string help_filterlist(DiscordMessage msg) {
-			StringWriter text = new ();
-
+			text_clr();
 			text.WriteLine($"Use `{m} -blacklist` & `{m} -whitelist` to set up channel filters.");
 			text.WriteLine("Entering a channel already on a list will remove it from that list.");
 			text.WriteLine("You can specify channels with channel IDs / mention strings / channel names.");
@@ -129,15 +137,12 @@ namespace Polybius.Commands {
 			text.WriteLine();
 			text.WriteLine($"Use `{m} -view-filters` to view the server's whitelist and blacklist.");
 			text.WriteLine($"Also see: `{m} -help bot-channel`.");
-
-			text.Flush();
-			return text.ToString();
+			return text_out();
 		}
 
 		// The help command for configuring a bot channel for the server.
 		static string help_botchannel(DiscordMessage msg) {
-			StringWriter text = new ();
-
+			text_clr();
 			text.WriteLine($"Use `{m} -bot-channel` to set a bot channel where Polybius will respond to searches.");
 			text.WriteLine($"`{m} -clear-bot-channel` will let Polybius respond anywhere.");
 			text.WriteLine();
@@ -148,30 +153,25 @@ namespace Polybius.Commands {
 			text.WriteLine();
 			text.WriteLine($"Use `{m} -view-filters` to view the current bot channel.");
 			text.WriteLine($"Also see: `{m} -help blacklist` / `{m} -help whitelist`.");
-
-			text.Flush();
-			return text.ToString();
+			return text_out();
 		}
 
 		// The help command for viewing the blacklist & whitelist &
 		// bot channel.
 		static string help_viewfilters(DiscordMessage msg) {
-			StringWriter text = new ();
-
+			text_clr();
 			text.WriteLine($"Use `{m} -view-filters` to view the current blacklist / whitelist / bot channel.");
 			text.WriteLine($"Also see: `{m} -help blacklist`, `{m} -help whitelist`, and `{m} -help bot-channel`.");
-
-			text.Flush();
-			return text.ToString();
+			return text_out();
 		}
 
 		// The help command for modifying the search token format.
 		static string help_settoken(DiscordMessage msg) {
-			StringWriter text = new ();
 			string tL = Settings.token_L_default;
 			string tR = Settings.token_R_default;
 			string tS = Settings.split_default;
 
+			text_clr();
 			text.WriteLine($"Use `{m} -set-token-L`, `{m} -set-token-R`, and `{m} -set-split` to change the search format.");
 			text.WriteLine($"You can use any (non-empty) string. The default settings are `{tL}query{tS}meta{tR}`.");
 			text.WriteLine();
@@ -181,32 +181,27 @@ namespace Polybius.Commands {
 			text.WriteLine($"> `{m} -set-split &&`");
 			text.WriteLine();
 			text.WriteLine($"Use `{m} -view-tokens` to check the current search format.");
-
-			text.Flush();
-			return text.ToString();
+			return text_out();
 		}
 
 		// The help command for checking the current format for
 		// search tokens.
 		static string help_viewtokens(DiscordMessage msg) {
-			StringWriter text = new ();
 			string tL = Settings.token_L_default;
 			string tR = Settings.token_R_default;
 			string tS = Settings.split_default;
 
+			text_clr();
 			text.WriteLine($"Use `{m} -view-tokens` to check the current search format.");
 			text.WriteLine($"The default settings are `{tL}query{tS}meta{tR}`.");
 			text.WriteLine();
 			text.WriteLine($"Use `{m} -set-token-L`, `{m} -set-token-R`, and `{m} -set-split` to change the current search format.");
-
-			text.Flush();
-			return text.ToString();
+			return text_out();
 		}
 
 		// The help command for setting server settings back to default.
 		static string help_resetserver(DiscordMessage msg) {
-			StringWriter text = new ();
-
+			text_clr();
 			text.WriteLine($"Use `{m} -reset-server-settings` to completely reset server settings.");
 			text.WriteLine("Polybius will act as if you had just added it to the server.");
 			text.WriteLine();
@@ -214,20 +209,15 @@ namespace Polybius.Commands {
 			text.WriteLine($"> `{m} -help blacklist`, `{m} -help whitelist`");
 			text.WriteLine($"> `{m} -help bot-channel`");
 			text.WriteLine($"> `{m} -help -set-token-L`, `{m} -help -set-token-R`, `{m} -help -set-split`");
-
-			text.Flush();
-			return text.ToString();
+			return text_out();
 		}
 
 		// The help command for viewing version text.
 		static string help_version(DiscordMessage msg) {
-			StringWriter text = new ();
-
+			text_clr();
 			text.WriteLine($"Use `{m} -version` to view the current version (and build) of the bot.");
 			text.WriteLine($"This corresponds to the nearest release tag of the repo.");
-
-			text.Flush();
-			return text.ToString();
+			return text_out();
 		}
 	}
 }
