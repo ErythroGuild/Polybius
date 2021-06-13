@@ -78,4 +78,4 @@ uwu=UwU Pizza Delivery, may I take your order?
 violet=https://i.redd.it/xpwlte1vyh371.jpg
 void=Sometimes puns are difficult to *avoid* but Ernie says he'll *annul* my contract if I make too many. :unamused:
 wagon=https://gfycat.com/tightanchoredgibbon
-what do you do with a drunken sailor=Shave his belly with a rusty razor,/nshave his belly with a rusty razor,/nshave his belly with a rusty razor,/nearly in the morning!
+what do you do with a drunken sailor=Shave his belly with a rusty razor,\nshave his belly with a rusty razor,\nshave his belly with a rusty razor,\nearly in the morning!
