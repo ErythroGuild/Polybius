@@ -37,35 +37,35 @@ namespace Polybius.Commands {
 			do_continue = validate_channel(ch_arg_n, msg);
 			if (!do_continue)
 				{ return; }
-			ulong ch_arg = (ulong)ch_arg_n!;	// guaranteed by validate
+			ulong ch_arg = (ulong)ch_arg_n!;    // guaranteed by validate
+			Settings settings = Program.settings[guild_id];
 
 			// Save previous settings to compare with.
-			HashSet<ulong> whitelist =
-				Program.settings[guild_id].ch_whitelist;
+			HashSet<ulong> whitelist = settings.ch_whitelist;
 			string m =
 				msg.Channel.Guild.GetChannel(ch_arg).Mention;
 
 			// Update settings.
 			if (whitelist.Contains(ch_arg)) {
-				Program.settings[guild_id].ch_whitelist.Remove(ch_arg);
+				settings.ch_whitelist.Remove(ch_arg);
 				text_clr();
 				text.WriteLine($"The whitelist already contains {m}.");
 				text.WriteLine($"{c} {m} has been removed from the whitelist.");
 				_ = msg.RespondAsync(text_out());
 				Program.log.info("  Removed channel from whitelist.");
 			} else {
-				Program.settings[guild_id].ch_whitelist.Add(ch_arg);
-				Program.log.info("  Added channel to whitelist.");
+				settings.ch_whitelist.Add(ch_arg);
 				text_clr();
 				text.WriteLine($"{c} {m} has been added to the whitelist.");
-				if (Program.settings[guild_id].ch_blacklist.Contains(ch_arg)) {
-					Program.settings[guild_id].ch_blacklist.Remove(ch_arg);
-					Program.log.debug("  Removed channel from blacklist.");
+				Program.log.info("  Added channel to whitelist.");
+				if (settings.ch_blacklist.Contains(ch_arg)) {
+					settings.ch_blacklist.Remove(ch_arg);
 					text.WriteLine($"{c} {m} has been removed from the blacklist.");
+					Program.log.debug("  Removed channel from blacklist.");
 				}
 				_ = msg.RespondAsync(text_out());
 			}
-			Program.settings[guild_id].save();
+			settings.save();
 			Program.log.debug("  Saved settings.");
 		}
 
@@ -84,34 +84,34 @@ namespace Polybius.Commands {
 			if (!do_continue)
 				{ return; }
 			ulong ch_arg = (ulong)ch_arg_n!;    // guaranteed by validate
+			Settings settings = Program.settings[guild_id];
 
 			// Save previous settings to compare with.
-			HashSet<ulong> blacklist =
-				Program.settings[guild_id].ch_blacklist;
+			HashSet<ulong> blacklist = settings.ch_blacklist;
 			string m =
 				msg.Channel.Guild.GetChannel(ch_arg).Mention;
 
 			// Update settings.
 			if (blacklist.Contains(ch_arg)) {
-				Program.settings[guild_id].ch_blacklist.Remove(ch_arg);
+				settings.ch_blacklist.Remove(ch_arg);
 				text_clr();
 				text.WriteLine($"The blacklist already contains {m}.");
 				text.WriteLine($"{c} {m} has been removed from the blacklist.");
 				_ = msg.RespondAsync(text_out());
 				Program.log.info("  Removed channel from blacklist.");
 			} else {
-				Program.settings[guild_id].ch_blacklist.Add(ch_arg);
-				Program.log.info("  Added channel to blacklist.");
+				settings.ch_blacklist.Add(ch_arg);
 				text_clr();
 				text.WriteLine($"{c} {m} has been added to the blacklist.");
-				if (Program.settings[guild_id].ch_whitelist.Contains(ch_arg)) {
-					Program.settings[guild_id].ch_whitelist.Remove(ch_arg);
-					Program.log.debug("  Removed channel from whitelist.");
+				Program.log.info("  Added channel to blacklist.");
+				if (settings.ch_whitelist.Contains(ch_arg)) {
+					settings.ch_whitelist.Remove(ch_arg);
 					text.WriteLine($"{c} {m} has been removed from the whitelist.");
+					Program.log.debug("  Removed channel from whitelist.");
 				}
 				_ = msg.RespondAsync(text_out());
 			}
-			Program.settings[guild_id].save();
+			settings.save();
 			Program.log.debug("  Saved settings.");
 		}
 
@@ -129,11 +129,11 @@ namespace Polybius.Commands {
 			do_continue = validate_channel(ch_bot_n, msg);
 			if (!do_continue)
 				{ return; }
-			ulong ch_bot = (ulong)ch_bot_n!;	// guaranteed by validate
+			ulong ch_bot = (ulong)ch_bot_n!;    // guaranteed by validate
+			Settings settings = Program.settings[guild_id];
 
 			// Save previous settings to compare with.
-			ulong? ch_bot_old =
-				Program.settings[guild_id].ch_bot;
+			ulong? ch_bot_old = settings.ch_bot;
 			string m =
 				msg.Channel.Guild.GetChannel(ch_bot).Mention;
 
@@ -145,11 +145,11 @@ namespace Polybius.Commands {
 				_ = msg.RespondAsync(text_out());
 				Program.log.info("  Bot channel unchanged.");
 			} else {
-				Program.settings[guild_id].ch_bot = ch_bot;
-				Program.log.info("  Changed bot channel.");
+				settings.ch_bot = ch_bot;
 				text_clr();
 				text.WriteLine($"{c} Bot channel has been set to {m}.");
 				_ = msg.RespondAsync(text_out());
+				Program.log.info("  Changed bot channel.");
 			}
 		}
 
@@ -163,11 +163,12 @@ namespace Polybius.Commands {
 			try_init_settings(guild_id);
 
 			// Save previous settings to compare with.
-			ulong? ch_bot_old = Program.settings[guild_id].ch_bot;
+			Settings settings = Program.settings[guild_id];
+			ulong? ch_bot_old = settings.ch_bot;
 
 			// Update settings.
 			if (ch_bot_old is not null) {
-				Program.settings[guild_id].ch_bot = null;
+				settings.ch_bot = null;
 				string m =
 					msg.Channel.Guild.GetChannel((ulong)ch_bot_old).Mention;
 				text_clr();
@@ -248,8 +249,9 @@ namespace Polybius.Commands {
 				{ return; }
 
 			// Write token value to settings.
-			string t = Program.settings[guild_id].token_L;
-			Program.settings[guild_id].token_L = arg;
+			Settings settings = Program.settings[guild_id];
+			string t = settings.token_L;
+			settings.token_L = arg;
 			text_clr();
 			text.WriteLine($"{c} Left-hand token changed from `{t}` to `{arg}`.");
 			_ = msg.RespondAsync(text_out());
@@ -271,8 +273,9 @@ namespace Polybius.Commands {
 				{ return; }
 
 			// Write token value to settings.
-			string t = Program.settings[guild_id].token_R;
-			Program.settings[guild_id].token_R = arg;
+			Settings settings = Program.settings[guild_id];
+			string t = settings.token_R;
+			settings.token_R = arg;
 			text_clr();
 			text.WriteLine($"{c} Right-hand token changed from `{t}` to `{arg}`.");
 			_ = msg.RespondAsync(text_out());
@@ -294,8 +297,9 @@ namespace Polybius.Commands {
 				{ return; }
 
 			// Write token value to settings.
-			string t = Program.settings[guild_id].split;
-			Program.settings[guild_id].split = arg;
+			Settings settings = Program.settings[guild_id];
+			string t = settings.split;
+			settings.split = arg;
 			text_clr();
 			text.WriteLine($"{c} Splitter token changed from `{t}` to `{arg}`.");
 			_ = msg.RespondAsync(text_out());
@@ -340,6 +344,8 @@ namespace Polybius.Commands {
 
 		// Print server-specific stats.
 		public static void stats(string arg, DiscordMessage msg) {
+			Program.log.error("  Attempted to check stats.");
+			Program.log.debug("  (Not yet implemented.)");
 		}
 
 		// Displays build information.
