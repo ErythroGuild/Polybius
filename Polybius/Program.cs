@@ -310,21 +310,17 @@ namespace Polybius {
 
 					// Rate-limit responses to other bots.
 					if (msg.Author.IsBot) {
-						log.info("Bot message received.");
-						log.info("  Checking ratelimits...");
-
 						ChannelBotPair ch_bot_id = new (msg.ChannelId, msg.Author.Id);
 
 						try_init_ratelimit(ch_bot_id);
 						bool is_limited = !try_process_ratelimit(ch_bot_id);
 						string bot_name = $"{msg.Author.Username}#{msg.Author.Discriminator}";
 						if (is_limited) {
+							log.info($"Message received from bot: {bot_name}");
 							log.warning($"  {bot_name} is currently being ratelimited!");
 							log.info("  Message will be silently discarded.");
 							log.endl();
 							return;
-						} else {
-							log.debug($"  {bot_name} is below ratelimit.");
 						}
 					}
 
