@@ -68,7 +68,7 @@ namespace Polybius {
 				write(" ");
 				break;
 			case Severity.Warning:
-				write_colored("[WARN]", ConsoleColor.Yellow);
+				write_colored("[WARN]", ConsoleColor.DarkYellow);
 				write(" ");
 				break;
 			}
