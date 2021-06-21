@@ -21,9 +21,9 @@ namespace Polybius.Engines {
 				string line = db.ReadLine() ?? "";
 				string[] split = line.Split(delim, 2);
 				string name = split[0], data = split[1];
-				data = decode_newlines(data);
 				if (name == token.text) {
 					Program.log.info("    Easter egg result found.");
+					data = decode_newlines(data);
 					results.Add(new EasterEggSearchResult {
 						is_exact_match = true,
 						similarity = 1.0F,
@@ -42,7 +42,16 @@ namespace Polybius.Engines {
 		}
 
 		static string decode_newlines(string str) {
-			return str.Replace(@"\n", "\n");
+			Dictionary<string, string> dict = new () {
+				{ @"\n"   , "\n"     },	// newline
+				{ @"\zwsp", "\u200B" },	// zero-width space
+				{ @"\qMsp", "\u2005" },	// 4-per-em space (quarter-em)
+				{ @"\nbsp", "\u00A0" },	// no-break space
+			};
+			foreach (string key in dict.Keys) {
+				str = str.Replace(key, dict[key]);
+			}
+			return str;
 		}
 
 		public class EasterEggSearchResult : SearchResult {
