@@ -16,6 +16,9 @@ namespace Polybius {
 
 		// Set up a new logger.
 		public Logger(string dir, TimeSpan interval) {
+			// Fixes character conversion issues (e.g. \u2022).
+			Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 			this.dir = dir;
 			timer = new (interval.TotalMilliseconds);
 			timer.AutoReset = true;
@@ -28,7 +31,7 @@ namespace Polybius {
 
 		// Create a new file and redirect logging output to it.
 		[MemberNotNull(nameof(file))]
-		private void new_file() {
+		void new_file() {
 			log_epoch = DateTime.Now;
 			string filename = log_epoch.ToString("yyyy-MM-dd_HHmm");
 			file = $@"{dir}/{filename}.txt";
@@ -58,7 +61,7 @@ namespace Polybius {
 		}
 
 		// Log to the console.
-		private static void print_console(string text, Severity level, DateTime time) {
+		static void print_console(string text, Severity level, DateTime time) {
 			string time_str = time.ToString(@"H:mm:ss");
 			write_colored($"{time_str} ", ConsoleColor.DarkGray);
 
@@ -88,7 +91,7 @@ namespace Polybius {
 		}
 
 		// Log to the designated file.
-		private void print_file(string text, Severity level, DateTime time) {
+		void print_file(string text, Severity level, DateTime time) {
 			string time_str = time.ToString("yyyy-MM-dd H:mm:ss.ff");
 			string tag = level switch {
 				Severity.Error   => "[ERR ]",
@@ -105,11 +108,11 @@ namespace Polybius {
 		}
 
 		// Alias for `Console.Write`.
-		private static void write(string text) { Console.Write(text); }
+		static void write(string text) { Console.Write(text); }
 
 		// Uses `Console.Write` in a specific color combo, and
 		// restores the colors after writing.
-		private static void write_colored(string text, ConsoleColor fg, ConsoleColor bg = ConsoleColor.Black) {
+		static void write_colored(string text, ConsoleColor fg, ConsoleColor bg = ConsoleColor.Black) {
 			ConsoleColor fg_prev = Console.ForegroundColor;
 			ConsoleColor bg_prev = Console.BackgroundColor;
 			Console.ForegroundColor = fg;
