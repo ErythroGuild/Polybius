@@ -38,6 +38,9 @@ namespace Polybius {
 		const string path_token = @"config/token_debug.txt";
 #endif
 
+		// Alternate mention (nickname) string.
+		internal const string str_mention_n = @"<@!483340619432067098>";
+
 		// User ID of the account to accept admin commands from.
 		internal const ulong id_user_admin = 165557736287764483;
 
@@ -332,9 +335,12 @@ namespace Polybius {
 					string msg_text = msg.Content.TrimStart();
 
 					// Respond to commands (prefix is mention string).
-					string mention_str = polybius.CurrentUser.Mention;
-					if (msg_text.StartsWith(mention_str)) {
-						msg_text = msg_text[mention_str.Length..];
+					string str_mention = polybius.CurrentUser.Mention;
+					if (msg_text.StartsWith(str_mention_n)) {
+						msg_text = msg_text.Replace(str_mention_n, str_mention);
+					}
+					if (msg_text.StartsWith(str_mention)) {
+						msg_text = msg_text[str_mention.Length..];
 						msg_text = msg_text.TrimStart();
 						log.info("Command received.");
 						log.debug($"  {msg_text}");
